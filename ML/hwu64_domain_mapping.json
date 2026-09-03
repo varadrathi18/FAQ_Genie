@@ -1,0 +1,92 @@
+{
+    "Productivity & Personal Organization": [
+        "alarm_query",
+        "alarm_remove",
+        "alarm_set",
+        "calendar_query",
+        "calendar_remove",
+        "calendar_set",
+        "datetime_convert",
+        "datetime_query",
+        "lists_createoradd",
+        "lists_query",
+        "lists_remove"
+    ],
+    "Smart Home & IoT": [
+        "audio_volume_down",
+        "audio_volume_mute",
+        "audio_volume_up",
+        "iot_cleaning",
+        "iot_coffee",
+        "iot_hue_lightchange",
+        "iot_hue_lightdim",
+        "iot_hue_lightoff",
+        "iot_hue_lighton",
+        "iot_hue_lightup",
+        "iot_wemo_off",
+        "iot_wemo_on"
+    ],
+    "Communication": [
+        "email_addcontact",
+        "email_query",
+        "email_querycontact",
+        "email_sendemail"
+    ],
+    "Conversational & General Assistant": [
+        "general_affirm",
+        "general_commandstop",
+        "general_confirm",
+        "general_dontcare",
+        "general_explain",
+        "general_joke",
+        "general_negate",
+        "general_praise",
+        "general_quirky",
+        "general_repeat"
+    ],
+    "Food & Cooking": [
+        "cooking_recipe"
+    ],
+    "Music & Media": [
+        "music_likeness",
+        "music_query",
+        "music_settings",
+        "play_audiobook",
+        "play_game",
+        "play_music",
+        "play_podcasts",
+        "play_radio"
+    ],
+    "General Knowledge & Utilities": [
+        "qa_currency",
+        "qa_definition",
+        "qa_factoid",
+        "qa_maths",
+        "qa_stock"
+    ],
+    "Recommendations & Discovery": [
+        "recommendation_events",
+        "recommendation_locations",
+        "recommendation_movies"
+    ],
+    "Social Media": [
+        "social_post",
+        "social_query"
+    ],
+    "Food & Dining": [
+        "takeaway_order",
+        "takeaway_query"
+    ],
+    "Travel & Transportation": [
+        "transport_query",
+        "transport_taxi",
+        "transport_ticket",
+        "transport_traffic"
+    ],
+    "Weather": [
+        "weather_query"
+    ],
+    "News & Current Information": [
+        "news_query"
+    ]
+}
