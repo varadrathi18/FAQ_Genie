@@ -1,0 +1,13 @@
+
+# Python virtual environments
+.venv/
+venv/
+ML/api_venv/
+ML/venv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Jupyter
+.ipynb_checkpoints/
