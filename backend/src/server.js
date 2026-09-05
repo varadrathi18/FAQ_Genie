@@ -1,4 +1,13 @@
 require('dotenv').config();
+
+const requiredEnvVars = ['MONGODB_URI', 'JWT_SECRET', 'JWT_EXPIRES_IN', 'FRONTEND_URL'];
+for (const envVar of requiredEnvVars) {
+  if (!process.env[envVar]) {
+    console.error(`FATAL ERROR: Missing required environment variable: ${envVar}`);
+    process.exit(1);
+  }
+}
+
 const app = require('./app');
 const connectDB = require('./config/db');
 const mongoose = require('mongoose');
