@@ -1,0 +1,6 @@
+{
+  "name": "FAQGenie",
+  "description": "Intelligent FAQ generator and orchestration platform turning product knowledge into high-converting, persona-aware, SEO-ready FAQs.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
