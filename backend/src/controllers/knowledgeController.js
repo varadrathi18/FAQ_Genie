@@ -3,6 +3,8 @@ const KnowledgeSource = require('../models/KnowledgeSource');
 const KnowledgeChunk = require('../models/KnowledgeChunk');
 const { resolveAndCheckSSRF } = require('../services/websiteScraper');
 const { runWebsiteIngestionAsync } = require('../services/knowledgeService');
+const { searchKnowledge } = require('../services/vectorSearchService');
+const { askQuestion } = require('../services/ragService');
 const mongoose = require('mongoose');
 
 // Helper to verify project ownership
@@ -171,9 +173,55 @@ const deleteKnowledgeSource = async (req, res, next) => {
   }
 };
 
+const searchKnowledgeEndpoint = async (req, res, next) => {
+  try {
+    const { projectId } = req.params;
+    await verifyProjectAccess(projectId, req.userId);
+
+    const { query } = req.body;
+    if (!query || typeof query !== 'string' || query.trim() === '') {
+      return res.status(400).json({
+        error: { message: 'Query is required.', code: 'BAD_REQUEST' }
+      });
+    }
+
+    const results = await searchKnowledge(projectId, query, 5);
+    res.status(200).json({ results });
+  } catch (error) {
+    if (error.status) {
+      return res.status(error.status).json({ error: { message: error.message, code: error.code } });
+    }
+    next(error);
+  }
+};
+
+const askQuestionEndpoint = async (req, res, next) => {
+  try {
+    const { projectId } = req.params;
+    await verifyProjectAccess(projectId, req.userId);
+
+    const { query } = req.body;
+    if (!query || typeof query !== 'string' || query.trim() === '') {
+      return res.status(400).json({
+        error: { message: 'Query is required.', code: 'BAD_REQUEST' }
+      });
+    }
+
+    const result = await askQuestion(projectId, query);
+    res.status(200).json(result);
+  } catch (error) {
+    if (error.status) {
+      return res.status(error.status).json({ error: { message: error.message, code: error.code } });
+    }
+    next(error);
+  }
+};
+
 module.exports = {
   ingestWebsite,
   getKnowledgeSources,
   getKnowledgeSource,
   deleteKnowledgeSource,
+  searchKnowledgeEndpoint,
+  askQuestionEndpoint,
 };

@@ -71,4 +71,19 @@ def predict_intent(text: str) -> dict:
         "is_out_of_scope": False
     }
 
+def generate_embedding(text: str) -> list[float]:
+    if not isinstance(text, str):
+        raise TypeError("text must be a string")
+
+    text = text.strip()
+
+    if not text:
+        raise ValueError("text cannot be empty")
+
+    embedding = embedding_model.encode(
+        [text],
+        convert_to_numpy=True
+    )[0]
+
+    return embedding.tolist()
 

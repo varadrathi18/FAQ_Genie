@@ -2,8 +2,7 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
-from predict import predict_intent
-
+from predict import predict_intent, generate_embedding
 
 app = FastAPI(
     title="FAQGenie ML API",
@@ -15,6 +14,8 @@ app = FastAPI(
 class IntentRequest(BaseModel):
     text: str
 
+class EmbedRequest(BaseModel):
+    text: str
 
 @app.get("/")
 def health_check():
@@ -31,6 +32,17 @@ def predict(request: IntentRequest):
 
         return result
 
+    except (TypeError, ValueError) as e:
+        raise HTTPException(
+            status_code=400,
+            detail=str(e)
+        )
+
+@app.post("/embed")
+def embed(request: EmbedRequest):
+    try:
+        embedding = generate_embedding(request.text)
+        return {"embedding": embedding}
     except (TypeError, ValueError) as e:
         raise HTTPException(
             status_code=400,

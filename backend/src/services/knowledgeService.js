@@ -2,6 +2,7 @@ const KnowledgeSource = require('../models/KnowledgeSource');
 const KnowledgeChunk = require('../models/KnowledgeChunk');
 const { scrapeWebsite } = require('./websiteScraper');
 const { chunkText } = require('./textChunker');
+const { generateEmbedding } = require('./embeddingService');
 
 const processWebsiteSource = async (sourceId) => {
   const source = await KnowledgeSource.findById(sourceId);
@@ -21,14 +22,20 @@ const processWebsiteSource = async (sourceId) => {
     const chunks = chunkText(extractedText);
     const limitedChunks = chunks.slice(0, 200);
 
-    const chunkDocs = limitedChunks.map((chunk) => ({
-      projectId: source.projectId,
-      knowledgeSourceId: source._id,
-      userId: source.userId,
-      text: chunk.text,
-      sourceUrl: scrapedData.sourceUrl,
-      chunkIndex: chunk.chunkIndex,
-    }));
+    const chunkDocs = [];
+    for (const chunk of limitedChunks) {
+      const embedding = await generateEmbedding(chunk.text);
+      chunkDocs.push({
+        projectId: source.projectId,
+        knowledgeSourceId: source._id,
+        userId: source.userId,
+        text: chunk.text,
+        sourceUrl: scrapedData.sourceUrl,
+        chunkIndex: chunk.chunkIndex,
+        embedding: embedding,
+        embeddingModel: 'sentence-transformers/all-mpnet-base-v2'
+      });
+    }
 
     // Safe re-ingestion: only delete chunks after parsing HTML and grouping new chunk array in memory successfully
     await KnowledgeChunk.deleteMany({ knowledgeSourceId: source._id });

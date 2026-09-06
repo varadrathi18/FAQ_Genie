@@ -37,6 +37,14 @@ const knowledgeChunkSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.Mixed,
       default: {},
     },
+    embedding: {
+      type: [Number],
+      required: false, // Optional during migration/creation
+    },
+    embeddingModel: {
+      type: String,
+      default: 'sentence-transformers/all-mpnet-base-v2',
+    },
   },
   {
     timestamps: true,
