@@ -16,7 +16,7 @@ const getGroqClient = () => {
   return groqClient;
 };
 
-const generateGroundedResponse = async ({ systemPrompt, userPrompt }) => {
+const generateGroundedResponse = async ({ systemPrompt, userPrompt, responseFormat = null }) => {
   const model = process.env.GROQ_MODEL || 'llama-3.1-8b-instant';
   const groq = getGroqClient();
   
@@ -28,6 +28,7 @@ const generateGroundedResponse = async ({ systemPrompt, userPrompt }) => {
       ],
       model: model,
       temperature: 0.1, // Deterministic
+      ...(responseFormat && { response_format: responseFormat }),
     });
     
     return response.choices[0]?.message?.content || null;
