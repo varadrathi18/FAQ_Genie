@@ -6,6 +6,7 @@ const { runWebsiteIngestionAsync } = require('../services/knowledgeService');
 const { searchKnowledge } = require('../services/vectorSearchService');
 const { askQuestion } = require('../services/ragService');
 const mongoose = require('mongoose');
+const knowledgeQueue = require('../queues/knowledgeQueue');
 
 // Helper to verify project ownership
 const verifyProjectAccess = async (projectId, userId) => {
@@ -39,11 +40,18 @@ const ingestWebsite = async (req, res, next) => {
     }
 
     let source = await KnowledgeSource.findOne({ projectId, userId: req.userId, url: trimmedUrl, type: 'website' });
-    
-    if (source && source.status === 'processing') {
-      return res.status(409).json({
-        error: { message: 'This website is currently being processed.', code: 'INGESTION_IN_PROGRESS' }
-      });
+
+    const activeJobs = await knowledgeQueue.getJobs(['waiting', 'active', 'delayed']);
+    // Only check active duplicates if the source exists
+    if (source) {
+      let existingJob = activeJobs.find(j => j.data.sourceId === source._id.toString());
+      if (existingJob) {
+        return res.status(202).json({
+          jobId: existingJob.id,
+          status: 'queued',
+          sourceId: source._id
+        });
+      }
     }
 
     if (!source) {
@@ -60,15 +68,19 @@ const ingestWebsite = async (req, res, next) => {
       await source.save();
     }
 
-    // Process asynchronously safely
-    runWebsiteIngestionAsync(source._id);
+    const jobId = `knowledge-${source._id}-${Date.now()}`;
+    await knowledgeQueue.add('knowledge.ingest', { sourceId: source._id, userId: req.userId }, {
+      jobId,
+      removeOnComplete: 100,
+      removeOnFail: 500,
+      attempts: 3,
+      backoff: { type: 'exponential', delay: 1000 }
+    });
 
     res.status(202).json({
-      id: source._id,
-      projectId: source.projectId,
-      type: source.type,
-      url: source.url,
-      status: source.status
+      jobId,
+      status: 'queued',
+      sourceId: source._id
     });
   } catch (error) {
     if (error.status) {

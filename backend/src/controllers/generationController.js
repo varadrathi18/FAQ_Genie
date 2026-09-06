@@ -1,5 +1,6 @@
 const Generation = require('../models/Generation');
 const Project = require('../models/Project');
+const FAQ = require('../models/FAQ');
 const mongoose = require('mongoose');
 
 const formatGeneration = (gen) => ({
@@ -116,8 +117,29 @@ const getGenerations = async (req, res, next) => {
     const { projectId } = req.params;
     await verifyProjectAccess(projectId, req.userId);
 
-    const generations = await Generation.find({ projectId }).sort({ version: -1 });
-    res.status(200).json({ generations: generations.map(formatGeneration) });
+    const generations = await Generation.find({ projectId }).sort({ createdAt: -1 }).lean();
+
+    const faqCounts = await FAQ.aggregate([
+      { $match: { projectId: new mongoose.Types.ObjectId(projectId), userId: new mongoose.Types.ObjectId(req.userId) } },
+      { $group: { _id: '$generationId', count: { $sum: 1 } } }
+    ]);
+
+    const countMap = {};
+    for (const item of faqCounts) {
+      countMap[item._id.toString()] = item.count;
+    }
+
+    const history = generations.map(gen => ({
+      generationId: gen._id,
+      version: gen.version,
+      createdAt: gen.createdAt,
+      faqCount: countMap[gen._id.toString()] || 0,
+      selectedFaqCount: gen.selectedFaqIds ? gen.selectedFaqIds.length : 0,
+      seoScore: gen.seoAnalysis ? gen.seoAnalysis.score : null,
+      publicationStatus: gen.publication ? gen.publication.status : null
+    }));
+
+    res.status(200).json({ generations: history });
   } catch (error) {
     if (error.status) {
       return res.status(error.status).json({ error: { message: error.message, code: error.code } });
@@ -144,7 +166,25 @@ const getGeneration = async (req, res, next) => {
       });
     }
 
-    res.status(200).json(formatGeneration(generation));
+    const rawFaqs = await FAQ.find({ generationId, projectId, userId: req.userId }).lean();
+    
+    const selectedSet = new Set((generation.selectedFaqIds || []).map(id => id.toString()));
+
+    const faqs = rawFaqs.map(faq => ({
+      id: faq._id,
+      persona: faq.persona,
+      question: faq.question,
+      answer: faq.answer,
+      intent: faq.intent,
+      intentConfidence: faq.intentConfidence,
+      sourceReferences: faq.sourceReferences,
+      selected: selectedSet.has(faq._id.toString())
+    }));
+
+    const formatted = formatGeneration(generation);
+    formatted.faqs = faqs;
+
+    res.status(200).json(formatted);
   } catch (error) {
     if (error.status) {
       return res.status(error.status).json({ error: { message: error.message, code: error.code } });

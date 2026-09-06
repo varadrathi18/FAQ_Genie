@@ -33,6 +33,10 @@ const knowledgeSourceSchema = new mongoose.Schema(
       enum: ['pending', 'processing', 'ready', 'failed'],
       default: 'pending',
     },
+    currentVersion: {
+      type: Number,
+      default: 0,
+    },
     lastFetchedAt: {
       type: Date,
       default: null,

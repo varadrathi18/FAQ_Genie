@@ -3,6 +3,9 @@ const KnowledgeChunk = require('../models/KnowledgeChunk');
 const { scrapeWebsite } = require('./websiteScraper');
 const { chunkText } = require('./textChunker');
 const { generateEmbedding } = require('./embeddingService');
+const { normalizeText } = require('../utils/textUtils');
+const crypto = require('crypto');
+const mongoose = require('mongoose');
 
 const processWebsiteSource = async (sourceId) => {
   const source = await KnowledgeSource.findById(sourceId);
@@ -21,15 +24,24 @@ const processWebsiteSource = async (sourceId) => {
 
     const chunks = chunkText(extractedText);
     const limitedChunks = chunks.slice(0, 200);
+    
+    // Determine the next version
+    const newVersion = source.currentVersion + 1;
 
     const chunkDocs = [];
     for (const chunk of limitedChunks) {
       const embedding = await generateEmbedding(chunk.text);
+      
+      const normalized = normalizeText(chunk.text);
+      const contentHash = crypto.createHash('sha256').update(normalized).digest('hex');
+
       chunkDocs.push({
         projectId: source.projectId,
         knowledgeSourceId: source._id,
         userId: source.userId,
         text: chunk.text,
+        version: newVersion,
+        contentHash,
         sourceUrl: scrapedData.sourceUrl,
         chunkIndex: chunk.chunkIndex,
         embedding: embedding,
@@ -37,22 +49,45 @@ const processWebsiteSource = async (sourceId) => {
       });
     }
 
-    // Safe re-ingestion: only delete chunks after parsing HTML and grouping new chunk array in memory successfully
-    await KnowledgeChunk.deleteMany({ knowledgeSourceId: source._id });
-    if (chunkDocs.length > 0) {
-      await KnowledgeChunk.insertMany(chunkDocs);
+    // Transaction Boundary
+    const session = await mongoose.startSession();
+    try {
+      session.startTransaction();
+
+      // Safe re-ingestion: do NOT destroy the entire history. 
+      // Delete chunks older than (newVersion - 1) to keep strictly previous+current.
+      await KnowledgeChunk.deleteMany({ 
+        knowledgeSourceId: source._id, 
+        version: { $lt: newVersion - 1 } 
+      }, { session });
+      
+      if (chunkDocs.length > 0) {
+        await KnowledgeChunk.insertMany(chunkDocs, { session });
+      }
+
+      source.title = scrapedData.title || source.title;
+      source.currentVersion = newVersion;
+      source.status = 'ready';
+      source.lastFetchedAt = new Date();
+      source.error = null;
+      await source.save({ session });
+      
+      await session.commitTransaction();
+    } catch (txnError) {
+      await session.abortTransaction();
+      throw txnError;
+    } finally {
+      session.endSession();
     }
 
-    source.title = scrapedData.title || source.title;
-    source.status = 'ready';
-    source.lastFetchedAt = new Date();
-    source.error = null;
-    await source.save();
   } catch (error) {
-    // If it fails, do not delete old chunks
-    source.status = 'failed';
-    source.error = error.message ? error.message.split('\n')[0] : 'Unknown error during scraping.';
-    await source.save();
+    // If it fails, do not delete old chunks and do not advance version
+    const errorMsg = error.message ? error.message.split('\n')[0] : 'Unknown error during scraping.';
+    await KnowledgeSource.updateOne(
+      { _id: source._id },
+      { $set: { status: 'failed', error: errorMsg } }
+    );
+    throw error;
   }
 };
 

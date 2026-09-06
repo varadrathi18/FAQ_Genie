@@ -24,6 +24,16 @@ const knowledgeChunkSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    version: {
+      type: Number,
+      default: 1,
+      index: true,
+    },
+    contentHash: {
+      type: String,
+      required: true,
+      index: true,
+    },
     sourceUrl: {
       type: String,
       required: true,
