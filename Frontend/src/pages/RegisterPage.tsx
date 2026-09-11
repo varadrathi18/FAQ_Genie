@@ -7,18 +7,26 @@ import { useToast } from '../context/ToastContext';
 import { UserPlus, ArrowRight } from 'lucide-react';
 
 export const RegisterPage: React.FC = () => {
-  const [name, setName] = useState('Sarah Chen');
-  const [email, setEmail] = useState('sarah.chen@acmelabs.io');
-  const [password, setPassword] = useState('••••••••••••');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const { register } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    register(name, email, password);
-    toast('Account created successfully! Welcome to FAQGenie Pro.', 'success');
-    navigate('/app/dashboard');
+    if (password.length < 8) {
+      toast('Password must be at least 8 characters long.', 'error');
+      return;
+    }
+    try {
+      await register(name, email, password);
+      toast('Account created successfully! Welcome to FAQGenie Pro.', 'success');
+      navigate('/app/dashboard');
+    } catch (err: any) {
+      toast(err.message || 'Failed to register', 'error');
+    }
   };
 
   return (

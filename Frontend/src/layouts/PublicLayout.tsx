@@ -4,7 +4,7 @@ import { ArrowRight, Sparkles } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export const PublicLayout: React.FC = () => {
-  const { isAuthenticated, currentUser } = useAuth();
+  const { isAuthenticated, currentUser, isLoading } = useAuth();
   const navigate = useNavigate();
 
   return (
@@ -35,7 +35,12 @@ export const PublicLayout: React.FC = () => {
 
         {/* Right Nav */}
         <div className="flex items-center gap-3">
-          {isAuthenticated ? (
+          {isLoading ? (
+            <div className="flex gap-2">
+              <div className="w-16 h-8 bg-gray-100 animate-pulse rounded-md"></div>
+              <div className="w-24 h-8 bg-gray-100 animate-pulse rounded-md"></div>
+            </div>
+          ) : isAuthenticated ? (
             <button
               onClick={() => navigate('/app/dashboard')}
               className="px-4 py-2 text-xs font-semibold rounded-md bg-[#635BFF] text-white hover:bg-[#5148E5] transition-colors flex items-center gap-1.5"

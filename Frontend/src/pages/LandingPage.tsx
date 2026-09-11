@@ -7,7 +7,7 @@ import { useAuth } from '../context/AuthContext';
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
-  const { switchToGuest, switchToSarah } = useAuth();
+  const { switchToGuest } = useAuth();
 
   const handleStartGuest = () => {
     switchToGuest();
@@ -15,7 +15,6 @@ export const LandingPage: React.FC = () => {
   };
 
   const handleStartPro = () => {
-    switchToSarah();
     navigate('/app/dashboard');
   };
 

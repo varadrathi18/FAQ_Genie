@@ -1,16 +1,17 @@
-import React, { createContext, useContext, useState } from 'react';
+// @refresh reset
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User } from '../types';
-import { mockUsers } from '../data/mockUsers';
+import { authApi } from '../api/auth';
 
 interface AuthContextType {
-  currentUser: User;
+  currentUser: User | null;
   isAuthenticated: boolean;
   isGuest: boolean;
-  login: (email?: string, password?: string) => void;
-  register: (name: string, email: string, password?: string) => void;
-  logout: () => void;
+  isLoading: boolean;
+  login: (email?: string, password?: string) => Promise<void>;
+  register: (name: string, email: string, password?: string) => Promise<void>;
+  logout: () => Promise<void>;
   switchToGuest: () => void;
-  switchToSarah: () => void;
   showGuestAuthModal: boolean;
   setShowGuestAuthModal: (show: boolean) => void;
 }
@@ -18,44 +19,64 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Default to Sarah Chen (Pro Tier authenticated user) as shown in reference screenshots
-  const [currentUser, setCurrentUser] = useState<User>(mockUsers.sarah);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [showGuestAuthModal, setShowGuestAuthModal] = useState<boolean>(false);
 
-  const isAuthenticated = !currentUser.isGuest;
-  const isGuest = !!currentUser.isGuest;
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const backendUser = await authApi.getCurrentUser();
+        setCurrentUser({
+          ...backendUser,
+          role: 'Product Lead',
+          tier: 'PRO TIER',
+        });
+      } catch (err) {
+        // Not authenticated
+        setCurrentUser(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchUser();
+  }, []);
 
-  const login = (email?: string) => {
-    setCurrentUser({
-      ...mockUsers.sarah,
-      email: email || mockUsers.sarah.email,
-    });
-    setShowGuestAuthModal(false);
-  };
+  const isAuthenticated = !!currentUser && !currentUser.isGuest;
+  const isGuest = !!currentUser?.isGuest;
 
-  const register = (name: string, email: string) => {
+  const login = async (email?: string, password?: string) => {
+    const backendUser = await authApi.login(email, password);
     setCurrentUser({
-      id: `user_${Date.now()}`,
-      name: name || 'Sarah Chen',
-      email: email || 'user@example.com',
-      avatarUrl: mockUsers.sarah.avatarUrl,
+      ...backendUser,
       role: 'Product Lead',
       tier: 'PRO TIER',
-      isGuest: false,
     });
     setShowGuestAuthModal(false);
   };
 
-  const logout = () => {
-    setCurrentUser(mockUsers.guest);
+  const register = async (name: string, email: string, password?: string) => {
+    const backendUser = await authApi.register(name, email, password);
+    setCurrentUser({
+      ...backendUser,
+      role: 'Product Lead',
+      tier: 'PRO TIER',
+    });
+    setShowGuestAuthModal(false);
+  };
+
+  const logout = async () => {
+    await authApi.logout();
+    setCurrentUser(null);
   };
 
   const switchToGuest = () => {
-    setCurrentUser(mockUsers.guest);
-  };
-
-  const switchToSarah = () => {
-    setCurrentUser(mockUsers.sarah);
+    setCurrentUser({
+      id: 'guest',
+      name: 'Guest Explorer',
+      email: '',
+      isGuest: true,
+    });
   };
 
   return (
@@ -64,11 +85,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         currentUser,
         isAuthenticated,
         isGuest,
+        isLoading,
         login,
         register,
         logout,
         switchToGuest,
-        switchToSarah,
         showGuestAuthModal,
         setShowGuestAuthModal,
       }}

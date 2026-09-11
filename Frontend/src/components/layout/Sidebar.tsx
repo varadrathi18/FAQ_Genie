@@ -9,7 +9,7 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ onCloseMobile }) => {
-  const { currentUser, isGuest, logout, switchToSarah, switchToGuest } = useAuth();
+  const { currentUser, isGuest, logout, switchToGuest } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -129,59 +129,39 @@ export const Sidebar: React.FC<SidebarProps> = ({ onCloseMobile }) => {
       <div className="p-3 border-t border-[#E5E7EB] bg-[#F8F9FA]/60">
         <div className="flex items-center justify-between p-2 rounded-md hover:bg-white transition-colors">
           <div className="flex items-center gap-2.5 min-w-0">
-            {currentUser.avatarUrl ? (
+            {currentUser?.avatarUrl ? (
               <img
                 src={currentUser.avatarUrl}
-                alt={currentUser.name}
+                alt={currentUser?.name || 'User'}
                 className="w-9 h-9 rounded-full object-cover shrink-0 border border-gray-200"
               />
             ) : (
               <div className="w-9 h-9 rounded-full bg-[#635BFF] text-white flex items-center justify-center font-semibold text-xs shrink-0">
-                {isGuest ? 'G' : 'SC'}
+                {isGuest ? 'G' : (currentUser?.name?.charAt(0) || 'U')}
               </div>
             )}
             <div className="min-w-0">
               <p className="text-xs font-semibold text-[#111318] truncate leading-tight">
-                {currentUser.name}
+                {currentUser?.name || 'Guest User'}
               </p>
               <p className="text-[10px] font-mono uppercase tracking-wider text-[#69707D] font-medium">
-                {currentUser.tier}
+                {currentUser?.tier || 'FREE'}
               </p>
             </div>
           </div>
           <button
             onClick={() => {
-              if (isGuest) {
-                switchToSarah();
-              } else {
+              if (!isGuest) {
                 logout();
+              } else {
+                navigate('/login');
               }
             }}
-            title={isGuest ? 'Switch to Sarah (Pro)' : 'Sign Out'}
+            title={isGuest ? 'Log In' : 'Sign Out'}
             className="p-1.5 text-[#69707D] hover:text-[#111318] rounded hover:bg-gray-100 transition-colors"
           >
             <LogOut className="w-4 h-4" />
           </button>
-        </div>
-
-        {/* Demo Quick Mode Toggle */}
-        <div className="mt-2 pt-2 border-t border-dashed border-gray-200 flex items-center justify-between text-[11px] text-[#69707D] px-1">
-          <span>Simulation:</span>
-          {isGuest ? (
-            <button
-              onClick={switchToSarah}
-              className="text-[#635BFF] font-medium hover:underline flex items-center gap-1"
-            >
-              <ShieldCheck className="w-3 h-3" /> Log in Sarah
-            </button>
-          ) : (
-            <button
-              onClick={switchToGuest}
-              className="text-gray-500 hover:text-gray-800 hover:underline"
-            >
-              Try as Guest
-            </button>
-          )}
         </div>
       </div>
     </aside>

@@ -6,7 +6,7 @@ import { useToast } from '../context/ToastContext';
 import { User, Mail, Shield, CheckCircle2, CreditCard } from 'lucide-react';
 
 export const ProfilePage: React.FC = () => {
-  const { currentUser, isGuest, switchToSarah, switchToGuest } = useAuth();
+  const { currentUser, isGuest, switchToGuest } = useAuth();
   const { toast } = useToast();
 
   const handleSave = (e: React.FormEvent) => {
@@ -77,25 +77,6 @@ export const ProfilePage: React.FC = () => {
           </Badge>
         </div>
 
-        {/* Simulation switcher for demo */}
-        <div className="pt-4 border-t border-[#F1F5F9] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-[#69707D]">
-          <div>
-            <span className="font-semibold text-[#111318] block">Interactive Mode Switcher</span>
-            <span>Switch personas to test the guest checkout and save flow.</span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {isGuest ? (
-              <Button size="sm" onClick={switchToSarah}>
-                Switch to Sarah Chen (Pro)
-              </Button>
-            ) : (
-              <Button variant="secondary" size="sm" onClick={switchToGuest}>
-                Simulate Guest User
-              </Button>
-            )}
-          </div>
-        </div>
       </div>
     </div>
   );

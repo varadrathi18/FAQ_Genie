@@ -6,19 +6,17 @@ import { useNavigate } from 'react-router-dom';
 import { ShieldCheck, UserPlus, LogIn } from 'lucide-react';
 
 export const GuestAuthModal: React.FC = () => {
-  const { showGuestAuthModal, setShowGuestAuthModal, switchToSarah } = useAuth();
+  const { showGuestAuthModal, setShowGuestAuthModal } = useAuth();
   const navigate = useNavigate();
 
   if (!showGuestAuthModal) return null;
 
   const handleLogin = () => {
-    switchToSarah();
     setShowGuestAuthModal(false);
     navigate('/login');
   };
 
   const handleRegister = () => {
-    switchToSarah();
     setShowGuestAuthModal(false);
     navigate('/register');
   };

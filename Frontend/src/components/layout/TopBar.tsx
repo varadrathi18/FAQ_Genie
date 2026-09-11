@@ -10,7 +10,7 @@ interface TopBarProps {
 }
 
 export const TopBar: React.FC<TopBarProps> = ({ onToggleMobileMenu, isMobileMenuOpen }) => {
-  const { currentUser, isGuest, switchToSarah, switchToGuest } = useAuth();
+  const { currentUser, isGuest, logout, switchToGuest } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
@@ -97,15 +97,15 @@ export const TopBar: React.FC<TopBarProps> = ({ onToggleMobileMenu, isMobileMenu
             onClick={() => setShowUserDropdown(!showUserDropdown)}
             className="flex items-center focus:outline-none ring-2 ring-transparent hover:ring-[#EEECFF] rounded-full transition-all"
           >
-            {currentUser.avatarUrl ? (
+            {currentUser?.avatarUrl ? (
               <img
                 src={currentUser.avatarUrl}
-                alt={currentUser.name}
+                alt={currentUser?.name || 'User'}
                 className="w-8 h-8 rounded-full object-cover border border-gray-200"
               />
             ) : (
               <div className="w-8 h-8 rounded-full bg-[#635BFF] text-white flex items-center justify-center font-semibold text-xs">
-                {isGuest ? 'G' : 'SC'}
+                {isGuest ? 'G' : (currentUser?.name?.charAt(0) || 'U')}
               </div>
             )}
           </button>
@@ -113,12 +113,12 @@ export const TopBar: React.FC<TopBarProps> = ({ onToggleMobileMenu, isMobileMenu
           {showUserDropdown && (
             <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-[#E5E7EB] py-2 z-50 animate-in fade-in zoom-in-95 duration-150">
               <div className="px-4 py-2 border-b border-[#F1F5F9]">
-                <p className="text-xs font-semibold text-[#111318]">{currentUser.name}</p>
+                <p className="text-xs font-semibold text-[#111318]">{currentUser?.name || 'Guest User'}</p>
                 <p className="text-[11px] text-[#69707D] truncate">
-                  {currentUser.email || 'Browsing as Guest'}
+                  {currentUser?.email || 'Browsing as Guest'}
                 </p>
                 <div className="mt-1.5 inline-block text-[10px] font-mono uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded bg-[#EEECFF] text-[#493ee5]">
-                  {currentUser.tier}
+                  {currentUser?.tier || 'FREE'}
                 </div>
               </div>
 
@@ -141,22 +141,22 @@ export const TopBar: React.FC<TopBarProps> = ({ onToggleMobileMenu, isMobileMenu
                 {isGuest ? (
                   <button
                     onClick={() => {
-                      switchToSarah();
+                      navigate('/login');
                       setShowUserDropdown(false);
                     }}
                     className="w-full text-left px-4 py-2 text-xs text-[#635BFF] hover:bg-[#EEECFF]/40 font-medium"
                   >
-                    Switch to Authenticated (Sarah)
+                    Log In / Register
                   </button>
                 ) : (
                   <button
                     onClick={() => {
-                      switchToGuest();
+                      logout();
                       setShowUserDropdown(false);
                     }}
-                    className="w-full text-left px-4 py-2 text-xs text-[#69707D] hover:bg-[#F8F9FA]"
+                    className="w-full text-left px-4 py-2 text-xs text-red-600 hover:bg-[#F8F9FA]"
                   >
-                    Simulate Guest Session
+                    Sign Out
                   </button>
                 )}
               </div>

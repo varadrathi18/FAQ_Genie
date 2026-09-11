@@ -49,13 +49,16 @@ export interface Generation {
   status: 'active' | 'draft' | 'archived';
 }
 
-export interface User {
+export interface BackendUser {
   id: string;
   name: string;
   email: string;
-  avatarUrl: string;
-  role: string;
-  tier: 'PRO TIER' | 'FREE TIER' | 'ENTERPRISE';
+}
+
+export interface User extends BackendUser {
+  avatarUrl?: string;
+  role?: string;
+  tier?: 'PRO TIER' | 'FREE TIER' | 'ENTERPRISE';
   isGuest?: boolean;
 }
 

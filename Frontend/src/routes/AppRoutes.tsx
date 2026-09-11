@@ -1,7 +1,8 @@
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { PublicLayout } from '../layouts/PublicLayout';
 import { AppLayout } from '../layouts/AppLayout';
+import { useAuth } from '../context/AuthContext';
 
 import { LandingPage } from '../pages/LandingPage';
 import { LoginPage } from '../pages/LoginPage';
@@ -17,6 +18,21 @@ import { HistoryDetailPage } from '../pages/HistoryDetailPage';
 import { SettingsPage } from '../pages/SettingsPage';
 import { ProfilePage } from '../pages/ProfilePage';
 
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { isAuthenticated, isLoading } = useAuth();
+  const location = useLocation();
+
+  if (isLoading) {
+    return <div className="flex h-screen items-center justify-center">Loading session...</div>;
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  return <>{children}</>;
+};
+
 export const AppRoutes: React.FC = () => {
   return (
     <Routes>
@@ -30,7 +46,7 @@ export const AppRoutes: React.FC = () => {
       {/* Authenticated / App Workspace Pages */}
       <Route path="/app" element={<AppLayout />}>
         <Route index element={<Navigate to="/app/dashboard" replace />} />
-        <Route path="dashboard" element={<DashboardPage />} />
+        <Route path="dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
         
         {/* Multi-step Generation Workflow */}
         <Route path="generate" element={<GeneratePage />} />
@@ -39,12 +55,12 @@ export const AppRoutes: React.FC = () => {
         <Route path="generate/preview" element={<PreviewExportPage />} />
 
         {/* History and Details */}
-        <Route path="history" element={<HistoryPage />} />
-        <Route path="history/:generationId" element={<HistoryDetailPage />} />
+        <Route path="history" element={<ProtectedRoute><HistoryPage /></ProtectedRoute>} />
+        <Route path="history/:generationId" element={<ProtectedRoute><HistoryDetailPage /></ProtectedRoute>} />
 
         {/* User and Workspace Management */}
-        <Route path="settings" element={<SettingsPage />} />
-        <Route path="profile" element={<ProfilePage />} />
+        <Route path="settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+        <Route path="profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
       </Route>
 
       {/* Fallback */}

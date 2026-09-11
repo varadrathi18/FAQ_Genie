@@ -7,23 +7,21 @@ import { useToast } from '../context/ToastContext';
 import { LogIn, ArrowRight } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
-  const [email, setEmail] = useState('sarah.chen@acmelabs.io');
-  const [password, setPassword] = useState('••••••••••••');
-  const { login, switchToSarah } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const { login } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    login(email, password);
-    toast('Welcome back, Sarah Chen!', 'success');
-    navigate('/app/dashboard');
-  };
-
-  const handleQuickDemo = () => {
-    switchToSarah();
-    toast('Logged in as Sarah Chen (Pro Tier)', 'success');
-    navigate('/app/dashboard');
+    try {
+      await login(email, password);
+      toast('Welcome back!', 'success');
+      navigate('/app/dashboard');
+    } catch (err: any) {
+      toast(err.message || 'Failed to login', 'error');
+    }
   };
 
   return (
@@ -37,21 +35,6 @@ export const LoginPage: React.FC = () => {
           <p className="text-xs text-[#69707D] mt-1">
             Access your active FAQ collections, schema audits, and webhook syncs.
           </p>
-        </div>
-
-        {/* Quick Demo Login Banner */}
-        <div className="mb-6 p-3 bg-[#EEECFF] border border-[#635BFF]/20 rounded-lg flex items-center justify-between">
-          <div className="text-xs">
-            <span className="font-semibold text-[#493ee5] block">Demo Account Ready</span>
-            <span className="text-[#69707D] text-[11px]">Sarah Chen (Head of Product Marketing)</span>
-          </div>
-          <button
-            type="button"
-            onClick={handleQuickDemo}
-            className="px-2.5 py-1 text-xs font-semibold rounded bg-[#635BFF] text-white hover:bg-[#5148E5] transition-colors"
-          >
-            1-Click Demo
-          </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
