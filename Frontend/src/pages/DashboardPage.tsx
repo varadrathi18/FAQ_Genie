@@ -1,15 +1,97 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { dashboardApi } from '../api/dashboard';
+import { DashboardResponse } from '../types';
 import { StatCard } from '../components/dashboard/StatCard';
 import { RecentGenerationsTable } from '../components/dashboard/RecentGenerationsTable';
-import { mockGenerations } from '../data/mockGenerations';
 import { Button } from '../components/common/Button';
-import { Plus, Sparkles, TrendingUp, CheckCircle, HelpCircle } from 'lucide-react';
+import { Plus, HelpCircle, AlertCircle, Loader2, FolderPlus } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const { currentUser, isGuest } = useAuth();
+
+  const [dashboard, setDashboard] = useState<DashboardResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchDashboard = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const data = await dashboardApi.getDashboard();
+        setDashboard(data);
+      } catch (err: any) {
+        setError(err?.response?.data?.error?.message || err.message || 'Failed to load dashboard data.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDashboard();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-32 max-w-7xl mx-auto">
+        <Loader2 className="w-10 h-10 animate-spin text-[#635BFF] mb-4" />
+        <p className="text-[#69707D]">Loading workspace overview...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6 text-left">
+        <div className="bg-red-50 text-red-600 p-6 rounded-xl flex flex-col items-center justify-center gap-3 text-center border border-red-100">
+          <AlertCircle className="w-8 h-8" />
+          <h2 className="text-lg font-bold">Failed to Load Dashboard</h2>
+          <span className="text-sm">{error}</span>
+          <Button onClick={() => window.location.reload()} variant="secondary" className="mt-2">
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!dashboard) {
+    return null;
+  }
+
+  const { overview, recentGenerations } = dashboard;
+
+  // Empty State
+  if (overview.projectCount === 0) {
+    return (
+      <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6 text-left">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#111318]">
+              Workspace Overview
+            </h1>
+            <p className="text-xs sm:text-sm text-[#69707D] mt-1">
+              Welcome back, <span className="text-[#111318] font-medium">{currentUser.name}</span>.
+            </p>
+          </div>
+        </div>
+
+        <div className="text-center py-20 bg-white border border-[#E5E7EB] rounded-xl flex flex-col items-center">
+          <FolderPlus className="w-12 h-12 text-[#D1D5DB] mb-4" />
+          <h3 className="text-lg font-semibold text-[#111318] mb-1">No projects yet</h3>
+          <p className="text-sm text-[#69707D] mb-6 max-w-md">
+            Get started by generating your first FAQ collection. It only takes a few minutes.
+          </p>
+          <Button onClick={() => navigate('/app/generate')} className="shadow-xs">
+            <Plus className="w-4 h-4 mr-1.5" />
+            <span>Generate your first FAQ collection</span>
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6 text-left">
@@ -20,7 +102,8 @@ export const DashboardPage: React.FC = () => {
             Workspace Overview
           </h1>
           <p className="text-xs sm:text-sm text-[#69707D] mt-1">
-            Welcome back, <span className="text-[#111318] font-medium">{currentUser.name}</span>. Managing 4 active FAQ collections and live schema embeds.
+            Welcome back, <span className="text-[#111318] font-medium">{currentUser.name}</span>. 
+            Managing {overview.projectCount} active {overview.projectCount === 1 ? 'project' : 'projects'}.
           </p>
         </div>
 
@@ -56,128 +139,28 @@ export const DashboardPage: React.FC = () => {
       {/* 4 Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          label="TOTAL FAQS"
-          value="46"
-          change="+12% this month"
-          trend="up"
-          subtext="Active across all live endpoints"
+          label="TOTAL PROJECTS"
+          value={overview.projectCount}
         />
         <StatCard
-          label="ACTIVE GENERATIONS"
-          value="4"
-          change="All live"
-          trend="up"
-          subtext="No collections pending review"
+          label="SELECTED FAQS"
+          value={overview.selectedFaqCount}
+          subtext={`Out of ${overview.faqCount} generated total`}
+        />
+        <StatCard
+          label="PUBLISHED COLLECTIONS"
+          value={overview.publishedCount}
         />
         <StatCard
           label="AVG SEO SCORE"
-          value="91%"
-          change="Top 5%"
-          trend="up"
-          subtext="Calculated across 46 questions"
-        />
-        <StatCard
-          label="AUTO-SYNCED QUERIES"
-          value="1,280"
-          change="+240 this week"
-          trend="up"
-          subtext="CDN script & React widgets"
+          value={overview.averageSeoScore !== null ? `${overview.averageSeoScore}/100` : "—"}
+          subtext={overview.averageSeoScore === null ? "Not analyzed" : undefined}
         />
       </div>
 
       {/* Main Table: Recent Generations */}
-      <RecentGenerationsTable generations={mockGenerations} />
-
-      {/* Quality Health & Persona Distribution Summary */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Persona Coverage Health Card */}
-        <div className="bg-white border border-[#E5E7EB] rounded-lg p-5 space-y-4 select-none">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-[#111318]">Persona Balance Index</h3>
-            <span className="text-[11px] font-mono text-[#16845B] bg-[#ECFDF5] px-2 py-0.5 rounded border border-[#A7F3D0]">
-              OPTIMAL
-            </span>
-          </div>
-          <p className="text-xs text-[#69707D]">
-            Distribution of questions across buyer awareness and technical sophistication stages.
-          </p>
-
-          <div className="space-y-3">
-            <div>
-              <div className="flex justify-between text-xs mb-1">
-                <span className="text-[#1D4ED8] font-medium">Nora (Beginner)</span>
-                <span className="font-mono text-[#69707D]">38% (18 FAQs)</span>
-              </div>
-              <div className="h-1.5 bg-blue-50 rounded-full">
-                <div className="h-full bg-blue-500 rounded-full w-[38%]" />
-              </div>
-            </div>
-
-            <div>
-              <div className="flex justify-between text-xs mb-1">
-                <span className="text-[#B45309] font-medium">Sam (Trust &amp; Risks)</span>
-                <span className="font-mono text-[#69707D]">34% (16 FAQs)</span>
-              </div>
-              <div className="h-1.5 bg-amber-50 rounded-full">
-                <div className="h-full bg-amber-500 rounded-full w-[34%]" />
-              </div>
-            </div>
-
-            <div>
-              <div className="flex justify-between text-xs mb-1">
-                <span className="text-[#7E22CE] font-medium">Pro (Technical)</span>
-                <span className="font-mono text-[#69707D]">28% (12 FAQs)</span>
-              </div>
-              <div className="h-1.5 bg-purple-50 rounded-full">
-                <div className="h-full bg-purple-500 rounded-full w-[28%]" />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Quick Launch Card */}
-        <div className="bg-gradient-to-br from-[#EEECFF] to-[#F4F3FF] border border-[#D9D6FE] rounded-lg p-5 flex flex-col justify-between select-none">
-          <div>
-            <div className="w-8 h-8 rounded-lg bg-[#635BFF] text-white flex items-center justify-center mb-3 shadow-xs">
-              <Sparkles className="w-4 h-4" />
-            </div>
-            <h3 className="text-base font-bold text-[#111318]">New Feature Launch?</h3>
-            <p className="text-xs text-[#464555] mt-1.5 leading-relaxed">
-              Synthesize 12 high-converting FAQs from your product documentation in seconds.
-            </p>
-          </div>
-
-          <div className="pt-4">
-            <Button
-              onClick={() => navigate('/app/generate')}
-              className="w-full justify-center text-xs"
-            >
-              <span>Start 4-Step FAQ Generation</span>
-            </Button>
-          </div>
-        </div>
-
-        {/* Sync Status Card */}
-        <div className="bg-white border border-[#E5E7EB] rounded-lg p-5 flex flex-col justify-between select-none">
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-mono uppercase tracking-wider text-[#69707D]">
-                INTEGRATION SYNC
-              </span>
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            </div>
-            <h3 className="text-base font-semibold text-[#111318]">Production Webhooks Active</h3>
-            <p className="text-xs text-[#69707D] mt-1.5 leading-relaxed">
-              Automatic re-indexing active on <strong>acmelabs.io</strong> with zero-delay edge cache purging.
-            </p>
-          </div>
-
-          <div className="pt-4 border-t border-[#F1F5F9] flex items-center justify-between text-xs text-[#69707D]">
-            <span>Last audit: 12 min ago</span>
-            <span className="text-[#635BFF] font-medium">99.98% Uptime</span>
-          </div>
-        </div>
-      </div>
+      <RecentGenerationsTable generations={recentGenerations} />
     </div>
   );
 };
+

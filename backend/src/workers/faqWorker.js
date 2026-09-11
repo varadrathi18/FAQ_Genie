@@ -22,7 +22,7 @@ const faqWorker = new Worker('faqQueue', async (job) => {
     
     return { generationId, faqCount };
   } catch (error) {
-    const isDomainError = ['VALIDATION_ERROR', 'NOT_FOUND', 'INSUFFICIENT_KNOWLEDGE', 'FAQ_GENERATION_INCOMPLETE', 'BAD_REQUEST'].includes(error.code);
+    const isDomainError = ['VALIDATION_ERROR', 'NOT_FOUND', 'INSUFFICIENT_KNOWLEDGE', 'BAD_REQUEST'].includes(error.code);
     const errObj = { 
       code: error.code || 'FAQ_GENERATION_FAILED', 
       message: error.message || 'Error generating FAQs' 

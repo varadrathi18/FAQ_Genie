@@ -1,5 +1,5 @@
 import { api as client } from './client';
-import { Generation } from '../types';
+import { Generation, GenerationDetail } from '../types';
 
 export const generationsApi = {
   createGeneration: async (projectId: string, payload: { inputSnapshot: any }) => {
@@ -16,7 +16,7 @@ export const generationsApi = {
   },
 
   getGeneration: async (projectId: string, generationId: string) => {
-    return client.get<Generation>(`/api/projects/${projectId}/generations/${generationId}`);
+    return client.get<GenerationDetail>(`/api/projects/${projectId}/generations/${generationId}`);
   },
 
   updateGeneration: async (projectId: string, generationId: string, payload: { selectedFaqIds?: string[], seoAnalysis?: any, publication?: any }) => {

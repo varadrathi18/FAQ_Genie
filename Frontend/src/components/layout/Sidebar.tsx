@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutGrid, Sparkles, History, Settings, User as UserIcon, Plus, LogOut, ShieldCheck } from 'lucide-react';
+import { LayoutGrid, Sparkles, History, Database, Settings, User as UserIcon, Plus, LogOut, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { cn } from '../../lib/utils';
 
@@ -21,6 +21,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onCloseMobile }) => {
     { to: '/app/dashboard', label: 'Dashboard', icon: LayoutGrid },
     { to: '/app/generate', label: 'Generate', icon: Sparkles },
     { to: '/app/history', label: 'History', icon: History },
+    { to: '/app/knowledge', label: 'Knowledge', icon: Database },
   ];
 
   const secondaryNavItems = [

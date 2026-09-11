@@ -1,0 +1,13 @@
+{
+  "name": "faq-genie-local-dev",
+  "private": true,
+  "scripts": {
+    "dev:frontend": "./scripts/start-frontend.sh",
+    "stop:frontend": "./scripts/stop-service.sh 3000 vite Frontend",
+    "dev:backend": "cd backend && npm run dev",
+    "stop:backend": "./scripts/stop-service.sh 5001 node Backend",
+    "dev:ml": "./scripts/start-ml.sh",
+    "stop:ml": "./scripts/stop-service.sh 8000 uvicorn ML",
+    "dev:worker": "cd backend && npm run worker"
+  }
+}

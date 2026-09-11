@@ -27,11 +27,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const fetchUser = async () => {
       try {
         const backendUser = await authApi.getCurrentUser();
-        setCurrentUser({
-          ...backendUser,
-          role: 'Product Lead',
-          tier: 'PRO TIER',
-        });
+        setCurrentUser(backendUser);
       } catch (err) {
         // Not authenticated
         setCurrentUser(null);
@@ -47,21 +43,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (email?: string, password?: string) => {
     const backendUser = await authApi.login(email, password);
-    setCurrentUser({
-      ...backendUser,
-      role: 'Product Lead',
-      tier: 'PRO TIER',
-    });
+    setCurrentUser(backendUser);
     setShowGuestAuthModal(false);
   };
 
   const register = async (name: string, email: string, password?: string) => {
     const backendUser = await authApi.register(name, email, password);
-    setCurrentUser({
-      ...backendUser,
-      role: 'Product Lead',
-      tier: 'PRO TIER',
-    });
+    setCurrentUser(backendUser);
     setShowGuestAuthModal(false);
   };
 

@@ -42,40 +42,15 @@ export const ProfilePage: React.FC = () => {
           )}
 
           <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg font-bold text-[#111318]">{currentUser.name}</h2>
-              <Badge variant="purple" size="sm">
-                {currentUser.tier}
-              </Badge>
-            </div>
+            <h2 className="text-lg font-bold text-[#111318]">{currentUser.name}</h2>
             <p className="text-xs text-[#69707D] flex items-center gap-1.5">
               <Mail className="w-3.5 h-3.5" />
               <span>{currentUser.email || 'guest@faqgenie.ai'}</span>
             </p>
-            <p className="text-xs text-[#464555] font-medium">{currentUser.role}</p>
           </div>
         </div>
 
-        {/* Subscription / Plan info */}
-        <div className="p-4 rounded-lg bg-[#F8F9FA] border border-[#E5E7EB] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-lg bg-[#EEECFF] text-[#635BFF] flex items-center justify-center shrink-0">
-              <CreditCard className="w-4 h-4" />
-            </div>
-            <div>
-              <span className="text-sm font-semibold text-[#111318] block">
-                {currentUser.tier === 'PRO TIER' ? 'Pro Plan Workspace' : 'Free Exploration Tier'}
-              </span>
-              <span className="text-xs text-[#69707D]">
-                Unlimited FAQ generation, live widget CDN hosting, and automatic Schema.org rich results.
-              </span>
-            </div>
-          </div>
 
-          <Badge variant="success" size="sm" className="shrink-0">
-            Active · Renews Annually
-          </Badge>
-        </div>
 
       </div>
     </div>

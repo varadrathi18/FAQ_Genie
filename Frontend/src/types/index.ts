@@ -86,35 +86,82 @@ export interface PublicationData {
 
 export interface Generation {
   id: string;
-  projectId?: string;
-  projectName?: string; // Legacy / mock compatibility
-  version: number | string;
-  inputSnapshot?: GenerationProductInfo;
-  productInfo?: GenerationProductInfo; // Legacy / mock compatibility
-  selectedFaqIds?: string[];
-  seoAnalysis?: any | null;
-  publication?: PublicationData | null;
-  createdAt?: string;
-  updatedAt?: string;
-  faqs?: FAQ[];
-  faqCount?: number; // Legacy / mock compatibility
-  seoScore?: number; // Legacy / mock compatibility
-  lastUpdated?: string; // Legacy / mock compatibility
-  status?: string; // Legacy / mock compatibility
+  projectId: string;
+  version: number;
+  inputSnapshot: GenerationProductInfo;
+  selectedFaqIds: string[];
+  seoAnalysis: BackendSeoAnalysis | null;
+  publication: PublicationData | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface GenerationDetail extends Generation {
+  faqs: FAQ[];
+}
+
+export interface HistoryGeneration {
+  generationId: string;
+  projectId: string;
+  projectName: string;
+  projectUrl?: string;
+  projectDescription?: string;
+  version: number;
+  createdAt: string;
+  faqCount: number;
+  selectedFaqCount: number;
+  seoScore: number | null;
+  publicationStatus: 'published' | 'unpublished' | null;
+}
+
+export interface DashboardOverview {
+  projectCount: number;
+  faqCount: number;
+  selectedFaqCount: number;
+  averageSeoScore: number | null;
+  publishedCount: number;
+}
+
+export interface DashboardRecentProject {
+  projectId: string;
+  title: string;
+  description: string;
+  status: string;
+  updatedAt: string;
+  latestGeneration: {
+    generationId: string;
+    version: number;
+    seoScore: number | null;
+    publicationStatus: string | null;
+  } | null;
+}
+
+export interface DashboardRecentGeneration {
+  generationId: string;
+  projectId: string;
+  projectTitle: string;
+  version: number;
+  faqCount: number;
+  selectedFaqCount: number;
+  seoScore: number | null;
+  publicationStatus: string | null;
+  createdAt: string;
+}
+
+export interface DashboardResponse {
+  overview: DashboardOverview;
+  recentProjects: DashboardRecentProject[];
+  recentGenerations: DashboardRecentGeneration[];
 }
 
 export interface Project {
   id: string;
-  title?: string;
-  name?: string; // Legacy / mock compatibility
-  description?: string;
+  title: string;
+  description: string;
   websiteUrl?: string;
-  url?: string; // Legacy / mock compatibility
-  status?: string;
-  activeGenerations?: number; // Legacy / mock compatibility
-  totalFaqs?: number; // Legacy / mock compatibility
-  createdAt?: string;
-  updatedAt?: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface BackendUser {
@@ -150,3 +197,58 @@ export interface SuggestFaqsResponse {
   suggestedFaqIds: string[];
   count: number;
 }
+
+export type KnowledgeSourceType = 'website' | 'text';
+export type KnowledgeSourceStatus = 'pending' | 'processing' | 'ready' | 'failed';
+
+export interface KnowledgeSource {
+  id: string;
+  type: KnowledgeSourceType;
+  url?: string;
+  title?: string;
+  status: KnowledgeSourceStatus;
+  currentVersion?: number;
+  lastFetchedAt: string | null;
+  error: string | null;
+  chunkCount?: number;
+}
+
+export type KnowledgeDriftStatus = 'detected' | 'reviewed' | 'resolved';
+export type KnowledgeDriftLevel = 'none' | 'low' | 'moderate' | 'high';
+
+export interface ChangedKnowledgeChunk {
+  type: 'added' | 'removed' | 'modified';
+  previousChunkId?: string | null;
+  currentChunkId?: string | null;
+  similarity?: number | null;
+  previousHash?: string | null;
+  currentHash?: string | null;
+}
+
+export interface AffectedFAQ {
+  faqId: string;
+  similarity?: number;
+  reason?: string;
+}
+
+export interface KnowledgeDriftSummary {
+  driftId: string;
+  knowledgeSourceId: string;
+  previousVersion: number;
+  currentVersion: number;
+  status: KnowledgeDriftStatus;
+  driftScore: number;
+  driftLevel: KnowledgeDriftLevel;
+  changedChunkCount: number;
+  affectedFaqCount: number;
+  detectedAt: string;
+}
+
+export interface KnowledgeDriftDetail extends KnowledgeDriftSummary {
+  userId: string;
+  projectId: string;
+  changedChunks: ChangedKnowledgeChunk[];
+  affectedFaqs: AffectedFAQ[];
+  resolvedAt?: string | null;
+}
+

@@ -1,3 +1,10 @@
+import sys
+if sys.version_info < (3, 11) or sys.version_info >= (3, 12):
+    print("CRITICAL BLOCKER: FAQGenie ML service explicitly requires Python 3.11.x.")
+    print(f"Current version is: {sys.version_info.major}.{sys.version_info.minor}")
+    print("Please use python3.11 -m venv api_venv and install requirements again.")
+    sys.exit(1)
+
 # pyrefly: ignore [missing-import]
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel

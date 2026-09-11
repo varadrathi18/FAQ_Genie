@@ -41,19 +41,28 @@ export const LandingPage: React.FC = () => {
 
         {/* CTA Buttons */}
         <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3.5">
-          <Button size="lg" onClick={handleStartPro} className="w-full sm:w-auto text-sm">
-            <span>Enter Workspace (Sarah Chen · Pro)</span>
-            <ArrowRight className="w-4 h-4 ml-1" />
+          <Button size="lg" onClick={() => navigate('/app/generate')} className="w-full sm:w-auto text-sm">
+            <span>Generate FAQs</span>
+            <Sparkles className="w-4 h-4 ml-1" />
           </Button>
 
           <Button
             size="lg"
             variant="secondary"
-            onClick={handleStartGuest}
+            onClick={() => navigate('/login')}
             className="w-full sm:w-auto text-sm"
           >
-            <span>Try Guest Generator Flow</span>
-            <Sparkles className="w-4 h-4 ml-1 text-[#635BFF]" />
+            <span>Login</span>
+            <ArrowRight className="w-4 h-4 ml-1" />
+          </Button>
+
+          <Button
+            size="lg"
+            variant="outline"
+            onClick={() => navigate('/register')}
+            className="w-full sm:w-auto text-sm"
+          >
+            <span>Register</span>
           </Button>
         </div>
 
@@ -74,9 +83,6 @@ export const LandingPage: React.FC = () => {
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 rounded bg-[#ECFDF5] text-[#16845B] border border-[#A7F3D0] text-[11px] font-mono font-semibold">
-                SEO 92/100
-              </span>
             </div>
           </div>
 
@@ -93,7 +99,7 @@ export const LandingPage: React.FC = () => {
               No technical knowledge is required. You can embed the widget by pasting a single line of script into your site header, or automatically sync it via our Shopify, WordPress, and Webflow native integrations.
             </p>
 
-            <div className="pt-4 border-t border-dashed border-[#E5E7EB] flex flex-wrap items-center justify-between gap-3 text-xs text-[#69707D]">
+            <div className="pt-4 border-t border-dashed border-[#E5E7EB] flex flex-wrap items-center gap-3 text-xs text-[#69707D]">
               <div className="flex items-center gap-3">
                 <span className="flex items-center gap-1 text-[#16845B]">
                   <CheckCircle className="w-3.5 h-3.5" /> Google Rich Results Ready
@@ -101,7 +107,6 @@ export const LandingPage: React.FC = () => {
                 <span>•</span>
                 <span className="font-mono">Schema.org JSON-LD Injected</span>
               </div>
-              <span className="text-[#635BFF] font-medium">12 FAQs Synthesized</span>
             </div>
           </div>
         </div>

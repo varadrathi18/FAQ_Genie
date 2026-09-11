@@ -1,15 +1,29 @@
 import React from 'react';
-import { Generation } from '../../types';
+import { DashboardRecentGeneration } from '../../types';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '../common/Badge';
 import { ArrowRight, Sparkles } from 'lucide-react';
 
 interface RecentGenerationsTableProps {
-  generations: Generation[];
+  generations: DashboardRecentGeneration[];
 }
 
 export const RecentGenerationsTable: React.FC<RecentGenerationsTableProps> = ({ generations }) => {
   const navigate = useNavigate();
+
+  const formatDate = (isoString: string) => {
+    try {
+      const date = new Date(isoString);
+      if (isNaN(date.getTime())) return 'Unknown date';
+      return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(date);
+    } catch {
+      return 'Unknown date';
+    }
+  };
+
+  if (generations.length === 0) {
+    return null;
+  }
 
   return (
     <div className="bg-white border border-[#E5E7EB] rounded-lg overflow-hidden select-none">
@@ -18,7 +32,7 @@ export const RecentGenerationsTable: React.FC<RecentGenerationsTableProps> = ({ 
         <div>
           <h3 className="text-base font-semibold text-[#111318]">Recent Generations</h3>
           <p className="text-xs text-[#69707D] mt-0.5">
-            Active FAQ collections published across web properties and documentation portals.
+            Your most recently created FAQ collections.
           </p>
         </div>
         <button
@@ -40,49 +54,52 @@ export const RecentGenerationsTable: React.FC<RecentGenerationsTableProps> = ({ 
               <th className="px-5 py-3">FAQS</th>
               <th className="px-5 py-3">SEO SCORE</th>
               <th className="px-5 py-3">STATUS</th>
-              <th className="px-5 py-3">LAST UPDATED</th>
+              <th className="px-5 py-3">CREATED ON</th>
               <th className="px-5 py-3 text-right">ACTION</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#F1F5F9]">
             {generations.map((gen) => (
               <tr
-                key={gen.id}
+                key={gen.generationId}
                 className="hover:bg-[#F8F9FA]/70 transition-colors cursor-pointer"
-                onClick={() => navigate(`/app/history/${gen.id}`)}
+                onClick={() => navigate(`/app/history/${gen.generationId}`, { state: { projectId: gen.projectId } })}
               >
                 <td className="px-5 py-3.5">
                   <div className="flex items-center gap-2">
-                    <span className="font-semibold text-sm text-[#111318]">{gen.projectName}</span>
+                    <span className="font-semibold text-sm text-[#111318]">{gen.projectTitle}</span>
                     <span className="px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded text-[10px] font-mono">
-                      {gen.version}
+                      v{gen.version}
                     </span>
                   </div>
                 </td>
                 <td className="px-5 py-3.5 font-mono text-gray-700">
-                  {gen.faqCount} FAQs
+                  {gen.selectedFaqCount || gen.faqCount} FAQs
                 </td>
                 <td className="px-5 py-3.5">
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-mono font-bold text-sm text-[#111318]">
-                      {gen.seoScore}
-                    </span>
-                    <span className="text-[10px] font-mono text-[#16845B] bg-[#ECFDF5] px-1 rounded border border-[#A7F3D0]">
-                      HIGH
-                    </span>
-                  </div>
+                  {gen.seoScore !== null ? (
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-mono font-bold text-sm text-[#111318]">
+                        {gen.seoScore}
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="text-gray-400 italic">Not analyzed</span>
+                  )}
                 </td>
                 <td className="px-5 py-3.5">
-                  <Badge variant="success" size="sm">
-                    Active
-                  </Badge>
+                  {gen.publicationStatus === 'published' ? (
+                    <Badge variant="success" size="sm">Published</Badge>
+                  ) : (
+                    <Badge variant="neutral" size="sm">Draft</Badge>
+                  )}
                 </td>
                 <td className="px-5 py-3.5 text-gray-500 font-mono">
-                  {gen.lastUpdated}
+                  {formatDate(gen.createdAt)}
                 </td>
                 <td className="px-5 py-3.5 text-right" onClick={(e) => e.stopPropagation()}>
                   <button
-                    onClick={() => navigate(`/app/history/${gen.id}`)}
+                    onClick={() => navigate(`/app/history/${gen.generationId}`, { state: { projectId: gen.projectId } })}
                     className="px-3 py-1.5 text-xs font-medium text-[#111318] bg-white border border-[#E5E7EB] hover:bg-gray-50 rounded-md transition-colors"
                   >
                     Review
@@ -94,40 +111,46 @@ export const RecentGenerationsTable: React.FC<RecentGenerationsTableProps> = ({ 
         </table>
       </div>
 
-      {/* Mobile Stacked Cards (matches Mobile Image 2) */}
+      {/* Mobile Stacked Cards */}
       <div className="md:hidden divide-y divide-[#F1F5F9]">
         {generations.map((gen) => (
           <div
-            key={gen.id}
-            onClick={() => navigate(`/app/history/${gen.id}`)}
+            key={gen.generationId}
+            onClick={() => navigate(`/app/history/${gen.generationId}`, { state: { projectId: gen.projectId } })}
             className="p-4 space-y-2.5 active:bg-[#F8F9FA] transition-colors"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-sm text-[#111318]">{gen.projectName}</span>
+                <span className="font-semibold text-sm text-[#111318]">{gen.projectTitle}</span>
                 <span className="px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded text-[10px] font-mono">
-                  {gen.version}
+                  v{gen.version}
                 </span>
               </div>
-              <Badge variant="success" size="sm">
-                Active
-              </Badge>
+              {gen.publicationStatus === 'published' ? (
+                <Badge variant="success" size="sm">Published</Badge>
+              ) : (
+                <Badge variant="neutral" size="sm">Draft</Badge>
+              )}
             </div>
 
             <div className="flex items-center justify-between text-xs text-[#69707D]">
               <div className="flex items-center gap-3">
-                <span className="font-mono">{gen.faqCount} FAQs</span>
+                <span className="font-mono">{gen.selectedFaqCount || gen.faqCount} FAQs</span>
                 <span>•</span>
-                <span className="font-mono text-[#111318] font-bold">SEO {gen.seoScore}/100</span>
+                {gen.seoScore !== null ? (
+                  <span className="font-mono text-[#111318] font-bold">SEO {gen.seoScore}/100</span>
+                ) : (
+                  <span className="italic text-gray-400">Not analyzed</span>
+                )}
               </div>
-              <span className="font-mono text-[11px]">{gen.lastUpdated}</span>
+              <span className="font-mono text-[11px]">{formatDate(gen.createdAt)}</span>
             </div>
 
             <div className="pt-2 flex items-center justify-end">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  navigate(`/app/history/${gen.id}`);
+                  navigate(`/app/history/${gen.generationId}`, { state: { projectId: gen.projectId } });
                 }}
                 className="w-full py-2 text-xs font-semibold text-[#635BFF] bg-[#EEECFF] rounded-md flex items-center justify-center gap-1.5"
               >

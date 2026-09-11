@@ -15,8 +15,10 @@ import { SEOAnalysisPage } from '../pages/SEOAnalysisPage';
 import { PreviewExportPage } from '../pages/PreviewExportPage';
 import { HistoryPage } from '../pages/HistoryPage';
 import { HistoryDetailPage } from '../pages/HistoryDetailPage';
+import { KnowledgePage } from '../pages/KnowledgePage';
 import { SettingsPage } from '../pages/SettingsPage';
 import { ProfilePage } from '../pages/ProfilePage';
+
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -57,6 +59,9 @@ export const AppRoutes: React.FC = () => {
         {/* History and Details */}
         <Route path="history" element={<ProtectedRoute><HistoryPage /></ProtectedRoute>} />
         <Route path="history/:generationId" element={<ProtectedRoute><HistoryDetailPage /></ProtectedRoute>} />
+
+        {/* Knowledge Base and Drift */}
+        <Route path="knowledge" element={<ProtectedRoute><KnowledgePage /></ProtectedRoute>} />
 
         {/* User and Workspace Management */}
         <Route path="settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
