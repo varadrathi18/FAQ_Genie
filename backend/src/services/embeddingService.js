@@ -6,7 +6,7 @@ const generateEmbedding = async (text) => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text }),
-      signal: AbortSignal.timeout(20000), // 20s timeout
+      signal: AbortSignal.timeout(90000), // 90s timeout to survive Render free tier cold starts
     });
     
     if (!response.ok) {

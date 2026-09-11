@@ -28,7 +28,7 @@ const getMLIntent = async (question) => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text: question }),
-      signal: AbortSignal.timeout(5000)
+      signal: AbortSignal.timeout(90000) // 90s timeout to survive Render free tier cold starts
     });
     
     if (!response.ok) {
