@@ -2,13 +2,31 @@ export type PersonaType = 'nora' | 'sam' | 'pro';
 
 export interface FAQ {
   id: string;
-  codeId: string; // e.g. "NORA-01", "SAM-02", "PRO-01"
   persona: PersonaType;
   question: string;
   answer: string;
+  intent?: string;
+  intentConfidence?: number;
+  sourceReferences?: any[];
+  selected?: boolean;
   recommended?: boolean;
   category?: string;
   isVerified?: boolean;
+  codeId?: string; // Keep for backward compatibility with mock UI if needed
+}
+
+export interface BackendSeoAnalysis {
+  score: number;
+  breakdown: {
+    coverage: number;
+    personaCoverage: number;
+    uniqueness: number;
+    answerCompleteness: number;
+    sourceCoverage: number;
+  };
+  recommendations: string[];
+  analyzedFaqCount: number;
+  analyzedAt: string;
 }
 
 export interface SEOMetrics {
@@ -29,7 +47,7 @@ export interface SEOMetrics {
 export interface GenerationProductInfo {
   title: string;
   description: string;
-  url: string;
+  url?: string;
   category: 'new_feature' | 'major_release' | 'api_update';
   specFile?: {
     name: string;
@@ -37,16 +55,66 @@ export interface GenerationProductInfo {
   };
 }
 
+export interface PublicationTheme {
+  primaryColor: string;
+  backgroundColor: string;
+  textColor: string;
+}
+
+export interface PublicationBrand {
+  siteTitle: string;
+  logoUrl: string | null;
+}
+
+export interface PublicationPreview {
+  generationId: string;
+  faqs: FAQ[];
+  theme: PublicationTheme;
+  brand: PublicationBrand;
+}
+
+export interface PublicationData {
+  status: 'published' | 'unpublished';
+  widgetId?: string;
+  theme?: PublicationTheme;
+  brand?: PublicationBrand;
+  embedCode?: string;
+  jsonLd?: string;
+  publishedAt?: string;
+  updatedAt?: string;
+}
+
 export interface Generation {
   id: string;
-  projectName: string;
-  version: string;
-  faqCount: number;
-  seoScore: number;
-  lastUpdated: string;
-  productInfo: GenerationProductInfo;
-  selectedFaqIds: string[];
-  status: 'active' | 'draft' | 'archived';
+  projectId?: string;
+  projectName?: string; // Legacy / mock compatibility
+  version: number | string;
+  inputSnapshot?: GenerationProductInfo;
+  productInfo?: GenerationProductInfo; // Legacy / mock compatibility
+  selectedFaqIds?: string[];
+  seoAnalysis?: any | null;
+  publication?: PublicationData | null;
+  createdAt?: string;
+  updatedAt?: string;
+  faqs?: FAQ[];
+  faqCount?: number; // Legacy / mock compatibility
+  seoScore?: number; // Legacy / mock compatibility
+  lastUpdated?: string; // Legacy / mock compatibility
+  status?: string; // Legacy / mock compatibility
+}
+
+export interface Project {
+  id: string;
+  title?: string;
+  name?: string; // Legacy / mock compatibility
+  description?: string;
+  websiteUrl?: string;
+  url?: string; // Legacy / mock compatibility
+  status?: string;
+  activeGenerations?: number; // Legacy / mock compatibility
+  totalFaqs?: number; // Legacy / mock compatibility
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface BackendUser {
@@ -62,12 +130,23 @@ export interface User extends BackendUser {
   isGuest?: boolean;
 }
 
-export interface Project {
-  id: string;
-  name: string;
-  description: string;
-  url: string;
-  activeGenerations: number;
-  totalFaqs: number;
-  updatedAt: string;
+export interface JobStatus {
+  jobId: string;
+  type: string;
+  status: 'queued' | 'processing' | 'completed' | 'failed';
+  progress: number;
+  result: any | null;
+  error: { code: string; message: string } | null;
+}
+
+export interface SaveSelectionResponse {
+  generationId: string;
+  selectedFaqIds: string[];
+  selectedCount: number;
+}
+
+export interface SuggestFaqsResponse {
+  generationId: string;
+  suggestedFaqIds: string[];
+  count: number;
 }

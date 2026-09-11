@@ -1,41 +1,28 @@
 import React, { useState } from 'react';
 import { CodeBlock } from '../common/CodeBlock';
 import { cn } from '../../lib/utils';
+import { Loader2 } from 'lucide-react';
 
-export const EmbedCodeTab: React.FC<{ projectId?: string }> = ({ projectId = 'gen_01' }) => {
+export const EmbedCodeTab: React.FC<{ embedCode?: string; isPublished?: boolean }> = ({ embedCode, isPublished }) => {
   const [activeLang, setActiveLang] = useState<'html' | 'react' | 'webflow'>('html');
 
-  const htmlSnippet = `<!-- FAQGenie Live Embed Container -->
-<div id="faqgenie-widget" data-collection="${projectId}"></div>
+  if (!isPublished) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 text-center text-[#69707D]">
+        <CodeBlock code="<!-- Publish generation to view embed code -->" language="HTML" />
+        <p className="mt-4 text-sm font-medium">Publish this generation to generate the embed script.</p>
+      </div>
+    );
+  }
 
-<!-- FAQGenie Async Script Engine -->
-<script
-  src="https://cdn.faqgenie.ai/v1/widget.js"
-  data-project="${projectId}"
-  data-theme="auto"
-  data-persona-filter="enabled"
-  async
-></script>`;
-
-  const reactSnippet = `import { FAQGenieWidget } from '@faqgenie/react';
-
-export default function FAQSection() {
-  return (
-    <section className="max-w-4xl mx-auto py-12 px-4">
-      <FAQGenieWidget
-        projectId="${projectId}"
-        theme="light"
-        enablePersonas={true}
-        onFaqExpanded={(faqId) => console.log('FAQ expanded:', faqId)}
-      />
-    </section>
-  );
-}`;
-
-  const webflowSnippet = `<!-- 1. Add an Embed element in Webflow Designer -->
-<!-- 2. Paste the following HTML block: -->
-<div class="faqgenie-embed-root" data-project="${projectId}"></div>
-<script src="https://cdn.faqgenie.ai/v1/widget.js" async></script>`;
+  if (!embedCode) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 text-center text-[#69707D]">
+        <Loader2 className="w-8 h-8 animate-spin mb-4 text-[#635BFF]" />
+        <p className="text-sm font-medium">Loading embed code...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 text-left select-none">
@@ -59,37 +46,11 @@ export default function FAQSection() {
           >
             HTML / Script
           </button>
-          <button
-            type="button"
-            onClick={() => setActiveLang('react')}
-            className={cn(
-              'px-2.5 py-1 rounded-md text-xs font-medium transition-colors',
-              activeLang === 'react' ? 'bg-white text-[#111318] shadow-xs' : 'text-[#69707D] hover:text-[#111318]'
-            )}
-          >
-            React
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveLang('webflow')}
-            className={cn(
-              'px-2.5 py-1 rounded-md text-xs font-medium transition-colors',
-              activeLang === 'webflow' ? 'bg-white text-[#111318] shadow-xs' : 'text-[#69707D] hover:text-[#111318]'
-            )}
-          >
-            Webflow / Shopify
-          </button>
         </div>
       </div>
 
       {activeLang === 'html' && (
-        <CodeBlock code={htmlSnippet} language="HTML" showLineNumbers />
-      )}
-      {activeLang === 'react' && (
-        <CodeBlock code={reactSnippet} language="TypeScript / JSX" showLineNumbers />
-      )}
-      {activeLang === 'webflow' && (
-        <CodeBlock code={webflowSnippet} language="HTML" showLineNumbers />
+        <CodeBlock code={embedCode} language="HTML" showLineNumbers />
       )}
     </div>
   );

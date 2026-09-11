@@ -91,6 +91,85 @@ const processWebsiteSource = async (sourceId) => {
   }
 };
 
+const processTextSource = async (sourceId, text) => {
+  const source = await KnowledgeSource.findById(sourceId);
+  if (!source) return;
+
+  try {
+    source.status = 'processing';
+    await source.save();
+
+    let extractedText = text;
+    if (extractedText.length > 500000) {
+      extractedText = extractedText.substring(0, 500000);
+    }
+
+    const chunks = chunkText(extractedText);
+    const limitedChunks = chunks.slice(0, 200);
+    
+    // Determine the next version
+    const newVersion = source.currentVersion + 1;
+
+    const chunkDocs = [];
+    for (const chunk of limitedChunks) {
+      const embedding = await generateEmbedding(chunk.text);
+      
+      const normalized = normalizeText(chunk.text);
+      const contentHash = crypto.createHash('sha256').update(normalized).digest('hex');
+
+      chunkDocs.push({
+        projectId: source.projectId,
+        knowledgeSourceId: source._id,
+        userId: source.userId,
+        text: chunk.text,
+        version: newVersion,
+        contentHash,
+        sourceUrl: 'User Provided Description',
+        chunkIndex: chunk.chunkIndex,
+        embedding: embedding,
+        embeddingModel: 'sentence-transformers/all-mpnet-base-v2'
+      });
+    }
+
+    // Transaction Boundary
+    const session = await mongoose.startSession();
+    try {
+      session.startTransaction();
+
+      // Safe re-ingestion
+      await KnowledgeChunk.deleteMany({ 
+        knowledgeSourceId: source._id, 
+        version: { $lt: newVersion - 1 } 
+      }, { session });
+      
+      if (chunkDocs.length > 0) {
+        await KnowledgeChunk.insertMany(chunkDocs, { session });
+      }
+
+      source.currentVersion = newVersion;
+      source.status = 'ready';
+      source.lastFetchedAt = new Date();
+      source.error = null;
+      await source.save({ session });
+      
+      await session.commitTransaction();
+    } catch (txnError) {
+      await session.abortTransaction();
+      throw txnError;
+    } finally {
+      session.endSession();
+    }
+
+  } catch (error) {
+    const errorMsg = error.message ? error.message.split('\n')[0] : 'Unknown error during text processing.';
+    await KnowledgeSource.updateOne(
+      { _id: source._id },
+      { $set: { status: 'failed', error: errorMsg } }
+    );
+    throw error;
+  }
+};
+
 // Safe boundary wrapper for background execution
 const runWebsiteIngestionAsync = async (sourceId) => {
   try {
@@ -103,5 +182,6 @@ const runWebsiteIngestionAsync = async (sourceId) => {
 
 module.exports = {
   processWebsiteSource,
+  processTextSource,
   runWebsiteIngestionAsync,
 };

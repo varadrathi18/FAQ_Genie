@@ -16,12 +16,12 @@ const knowledgeSourceSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ['website'],
+      enum: ['website', 'text'],
       required: true,
     },
     url: {
       type: String,
-      required: true,
+      required: function() { return this.type === 'website'; },
       trim: true,
     },
     title: {

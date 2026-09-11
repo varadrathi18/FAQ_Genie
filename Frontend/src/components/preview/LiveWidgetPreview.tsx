@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FAQ, PersonaType } from '../../types';
+import { FAQ, PersonaType, PublicationTheme, PublicationBrand } from '../../types';
 import { ChevronDown, ChevronUp, Search, Sparkles } from 'lucide-react';
 import { PersonaBadge } from '../common/PersonaBadge';
 import { cn } from '../../lib/utils';
@@ -7,12 +7,16 @@ import { cn } from '../../lib/utils';
 interface LiveWidgetPreviewProps {
   title: string;
   faqs: FAQ[];
+  theme?: PublicationTheme;
+  brand?: PublicationBrand;
   className?: string;
 }
 
 export const LiveWidgetPreview: React.FC<LiveWidgetPreviewProps> = ({
   title,
   faqs,
+  theme,
+  brand,
   className,
 }) => {
   const [openId, setOpenId] = useState<string | null>(faqs[0]?.id || null);
@@ -35,17 +39,33 @@ export const LiveWidgetPreview: React.FC<LiveWidgetPreviewProps> = ({
   return (
     <div className={cn('bg-white border border-[#E5E7EB] rounded-xl overflow-hidden shadow-xs select-none', className)}>
       {/* Widget Header Mockup */}
-      <div className="p-6 bg-gradient-to-b from-[#F9F9FF] to-white border-b border-[#F1F5F9]">
+      <div 
+        className="p-6 border-b border-[#F1F5F9]" 
+        style={{ 
+          backgroundColor: theme?.backgroundColor || '#F9F9FF',
+          color: theme?.textColor || '#111318'
+        }}
+      >
         <div className="flex items-center gap-2 mb-2">
-          <div className="w-6 h-6 rounded-md bg-[#635BFF] flex items-center justify-center text-white">
-            <Sparkles className="w-3.5 h-3.5" />
-          </div>
-          <span className="text-xs font-mono font-semibold uppercase tracking-wider text-[#635BFF]">
-            LIVE EMBEDDED WIDGET
+          {brand?.logoUrl ? (
+            <img src={brand.logoUrl} alt="Logo" className="w-6 h-6 rounded-md object-cover" />
+          ) : (
+            <div 
+              className="w-6 h-6 rounded-md flex items-center justify-center text-white"
+              style={{ backgroundColor: theme?.primaryColor || '#635BFF' }}
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+            </div>
+          )}
+          <span 
+            className="text-xs font-mono font-semibold uppercase tracking-wider"
+            style={{ color: theme?.primaryColor || '#635BFF' }}
+          >
+            {brand?.siteTitle || 'LIVE EMBEDDED WIDGET'}
           </span>
         </div>
-        <h3 className="text-xl font-bold text-[#111318] tracking-tight">{title}</h3>
-        <p className="text-xs text-[#69707D] mt-1">
+        <h3 className="text-xl font-bold tracking-tight">{title}</h3>
+        <p className="text-xs opacity-75 mt-1">
           Instant verified answers for onboarding, security compliance, and engineering inquiries.
         </p>
 

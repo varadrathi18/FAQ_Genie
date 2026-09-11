@@ -1,23 +1,23 @@
 import React, { createContext, useContext, useState, useMemo } from 'react';
-import { FAQ, GenerationProductInfo, SEOMetrics } from '../types';
-import { mockFaqs, defaultSelectedFaqIds, mockSEOMetrics } from '../data/mockFaqs';
+import { FAQ, GenerationProductInfo, BackendSeoAnalysis } from '../types';
+import { faqsApi } from '../api/faqs';
+import { seoApi } from '../api/seo';
+import { publicationApi } from '../api/publication';
+import { PublicationData, PublicationPreview } from '../types';
 
 interface GenerationContextType {
   productInfo: GenerationProductInfo;
   setProductInfo: React.Dispatch<React.SetStateAction<GenerationProductInfo>>;
   updateProductInfoField: (field: keyof GenerationProductInfo, value: any) => void;
   faqs: FAQ[];
+  setFaqs: React.Dispatch<React.SetStateAction<FAQ[]>>;
   selectedFaqIds: string[];
   toggleFaqSelection: (id: string) => void;
   selectAllFaqs: () => void;
   deselectAllFaqs: () => void;
-  autoBalanceFaqs: () => void;
   updateFaq: (id: string, updated: Partial<FAQ>) => void;
   personaFilter: 'all' | 'nora' | 'sam' | 'pro';
   setPersonaFilter: (filter: 'all' | 'nora' | 'sam' | 'pro') => void;
-  isGenerating: boolean;
-  startGenerating: (onComplete?: () => void) => void;
-  seoMetrics: SEOMetrics;
   stats: {
     total: number;
     selectedCount: number;
@@ -28,29 +28,62 @@ interface GenerationContextType {
     selectedSam: number;
     selectedPro: number;
   };
+  projectId: string | null;
+  setProjectId: React.Dispatch<React.SetStateAction<string | null>>;
+  generationId: string | null;
+  setGenerationId: React.Dispatch<React.SetStateAction<string | null>>;
   resetWorkflow: () => void;
+  isSavingSelection: boolean;
+  isSuggestingFaqs: boolean;
+  selectionError: string | null;
+  suggestionError: string | null;
+  saveSelection: () => Promise<void>;
+  suggestBestFaqs: () => Promise<void>;
+  seoAnalysis: BackendSeoAnalysis | null;
+  setSeoAnalysis: React.Dispatch<React.SetStateAction<BackendSeoAnalysis | null>>;
+  isAnalyzingSeo: boolean;
+  seoError: string | null;
+  analyzeSeo: () => Promise<BackendSeoAnalysis | undefined>;
+  publicationPreview: PublicationPreview | null;
+  publication: PublicationData | null;
+  isLoadingPublication: boolean;
+  isPublishing: boolean;
+  publicationError: string | null;
+  loadPublicationPreview: () => Promise<void>;
+  publishGeneration: () => Promise<void>;
+  unpublishGeneration: () => Promise<void>;
 }
 
 const initialProductInfo: GenerationProductInfo = {
-  title: 'AI Meeting Summaries & Action Items',
-  description:
-    'Our new AI Meeting Summaries instantly transcribes multi-speaker conversations, extracts key decisions, assigns action items with deadlines to Linear or Jira, and syncs recording timestamps directly to Notion.',
-  url: 'https://acmelabs.io/features/meeting',
+  title: '',
+  description: '',
+  url: '',
   category: 'new_feature',
-  specFile: {
-    name: 'meeting-summary-v2-spec.pdf',
-    size: '1.2 MB',
-  },
 };
 
 const GenerationContext = createContext<GenerationContextType | undefined>(undefined);
 
 export const GenerationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [productInfo, setProductInfo] = useState<GenerationProductInfo>(initialProductInfo);
-  const [faqs, setFaqs] = useState<FAQ[]>(mockFaqs);
-  const [selectedFaqIds, setSelectedFaqIds] = useState<string[]>(defaultSelectedFaqIds);
+  const [projectId, setProjectId] = useState<string | null>(null);
+  const [generationId, setGenerationId] = useState<string | null>(null);
+  const [faqs, setFaqs] = useState<FAQ[]>([]);
+  const [selectedFaqIds, setSelectedFaqIds] = useState<string[]>([]);
   const [personaFilter, setPersonaFilter] = useState<'all' | 'nora' | 'sam' | 'pro'>('all');
-  const [isGenerating, setIsGenerating] = useState<boolean>(false);
+  
+  const [isSavingSelection, setIsSavingSelection] = useState(false);
+  const [isSuggestingFaqs, setIsSuggestingFaqs] = useState(false);
+  const [selectionError, setSelectionError] = useState<string | null>(null);
+  const [suggestionError, setSuggestionError] = useState<string | null>(null);
+  const [seoAnalysis, setSeoAnalysis] = useState<BackendSeoAnalysis | null>(null);
+  const [isAnalyzingSeo, setIsAnalyzingSeo] = useState(false);
+  const [seoError, setSeoError] = useState<string | null>(null);
+  
+  const [publicationPreview, setPublicationPreview] = useState<PublicationPreview | null>(null);
+  const [publication, setPublication] = useState<PublicationData | null>(null);
+  const [isLoadingPublication, setIsLoadingPublication] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [publicationError, setPublicationError] = useState<string | null>(null);
 
   const updateProductInfoField = (field: keyof GenerationProductInfo, value: any) => {
     setProductInfo((prev) => ({ ...prev, [field]: value }));
@@ -70,31 +103,153 @@ export const GenerationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     setSelectedFaqIds([]);
   };
 
-  const autoBalanceFaqs = () => {
-    // Automatically select the best balanced 6 or 8 FAQs (Nora: 2-3, Sam: 2-3, Pro: 2-3)
-    const recommendedOrTop = faqs
-      .filter((f) => f.recommended || f.codeId.endsWith('-01') || f.codeId.endsWith('-02'))
-      .slice(0, 6)
-      .map((f) => f.id);
-    setSelectedFaqIds(recommendedOrTop);
-  };
-
   const updateFaq = (id: string, updated: Partial<FAQ>) => {
     setFaqs((prev) => prev.map((faq) => (faq.id === id ? { ...faq, ...updated } : faq)));
   };
 
-  const startGenerating = (onComplete?: () => void) => {
-    setIsGenerating(true);
-    setTimeout(() => {
-      setIsGenerating(false);
-      if (onComplete) onComplete();
-    }, 1400);
-  };
-
   const resetWorkflow = () => {
     setProductInfo(initialProductInfo);
-    setSelectedFaqIds(defaultSelectedFaqIds);
+    setProjectId(null);
+    setGenerationId(null);
+    setFaqs([]);
+    setSelectedFaqIds([]);
     setPersonaFilter('all');
+    setSelectionError(null);
+    setSuggestionError(null);
+    setSeoAnalysis(null);
+    setSeoError(null);
+    setPublicationPreview(null);
+    setPublication(null);
+    setPublicationError(null);
+  };
+
+  const saveSelection = async () => {
+    if (!projectId || !generationId) {
+      const msg = 'Missing project or generation ID';
+      setSelectionError(msg);
+      throw new Error(msg);
+    }
+    setIsSavingSelection(true);
+    setSelectionError(null);
+    try {
+      await faqsApi.saveFaqSelection(projectId, generationId, selectedFaqIds);
+      setSeoAnalysis(null);
+    } catch (err: any) {
+      const msg = err.message || 'Failed to save selection';
+      setSelectionError(msg);
+      throw new Error(msg);
+    } finally {
+      setIsSavingSelection(false);
+    }
+  };
+
+  const suggestBestFaqs = async () => {
+    if (!projectId || !generationId) {
+      const msg = 'Missing project or generation ID';
+      setSuggestionError(msg);
+      throw new Error(msg);
+    }
+    setIsSuggestingFaqs(true);
+    setSuggestionError(null);
+    try {
+      const response = await faqsApi.suggestFaqs(projectId, generationId);
+      setSelectedFaqIds(response.suggestedFaqIds);
+      await faqsApi.saveFaqSelection(projectId, generationId, response.suggestedFaqIds);
+      setSeoAnalysis(null);
+    } catch (err: any) {
+      const msg = err.message || 'Failed to suggest FAQs';
+      setSuggestionError(msg);
+      throw new Error(msg);
+    } finally {
+      setIsSuggestingFaqs(false);
+    }
+  };
+
+  const analyzeSeo = async () => {
+    if (!projectId || !generationId) {
+      const msg = 'Missing project or generation ID';
+      setSeoError(msg);
+      throw new Error(msg);
+    }
+    if (selectedFaqIds.length === 0) {
+      const msg = 'Please select at least one FAQ to analyze';
+      setSeoError(msg);
+      throw new Error(msg);
+    }
+    setIsAnalyzingSeo(true);
+    setSeoError(null);
+    try {
+      const response = await seoApi.analyzeSeo(projectId, generationId);
+      setSeoAnalysis(response);
+      return response;
+    } catch (err: any) {
+      const msg = err.message || 'Failed to analyze SEO';
+      setSeoError(msg);
+      if (err.code === 'NO_SELECTION' || err.code === 'FAQ_GENERATION_MISMATCH') {
+        setSeoAnalysis(null);
+      }
+      throw new Error(msg);
+    } finally {
+      setIsAnalyzingSeo(false);
+    }
+  };
+
+  const loadPublicationPreview = async () => {
+    if (!projectId || !generationId) return;
+    setIsLoadingPublication(true);
+    setPublicationError(null);
+    try {
+      const result = await publicationApi.getPublicationPreview(projectId, generationId);
+      setPublicationPreview(result);
+    } catch (err: any) {
+      setPublicationError(err.message || 'Failed to load publication preview');
+    } finally {
+      setIsLoadingPublication(false);
+    }
+  };
+
+  const publishGeneration = async () => {
+    if (!projectId || !generationId) {
+      const msg = 'Missing project or generation ID';
+      setPublicationError(msg);
+      throw new Error(msg);
+    }
+    setIsPublishing(true);
+    setPublicationError(null);
+    try {
+      const result = await publicationApi.publishGeneration(projectId, generationId);
+      setPublication(result);
+    } catch (err: any) {
+      const msg = err.message || 'Failed to publish generation';
+      setPublicationError(msg);
+      throw new Error(msg);
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
+  const unpublishGeneration = async () => {
+    if (!projectId || !generationId) {
+      const msg = 'Missing project or generation ID';
+      setPublicationError(msg);
+      throw new Error(msg);
+    }
+    setIsPublishing(true); // Reuse isPublishing for unpublish loading state
+    setPublicationError(null);
+    try {
+      const result = await publicationApi.unpublishGeneration(projectId, generationId);
+      if (publication) {
+        setPublication({ ...publication, status: result.status as any });
+      } else {
+        setPublication({ status: result.status as any });
+      }
+    } catch (err: any) {
+      const msg = err.message || 'Failed to unpublish generation';
+      setPublicationError(msg);
+      throw new Error(msg);
+    } finally {
+      setIsPublishing(false);
+    }
   };
 
   const stats = useMemo(() => {
@@ -119,35 +274,6 @@ export const GenerationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     };
   }, [faqs, selectedFaqIds]);
 
-  // Adjust SEO score dynamically based on selection balance
-  const seoMetrics = useMemo(() => {
-    const totalSelected = selectedFaqIds.length;
-    if (totalSelected === 0) {
-      return {
-        ...mockSEOMetrics,
-        compositeScore: 0,
-        questionQuality: 0,
-        topicCoverage: 0,
-        intentDiversity: 0,
-        personaCoverage: 0,
-        duplicateRisk: 0,
-      };
-    }
-
-    // High fidelity calculation
-    const hasNora = stats.selectedNora > 0;
-    const hasSam = stats.selectedSam > 0;
-    const hasPro = stats.selectedPro > 0;
-    const personaBalance = (hasNora ? 30 : 0) + (hasSam ? 30 : 0) + (hasPro ? 30 : 0);
-    const volumeBonus = Math.min(totalSelected * 2, 10);
-    const score = Math.min(Math.round(personaBalance + volumeBonus + 2), 98);
-
-    return {
-      ...mockSEOMetrics,
-      compositeScore: score,
-    };
-  }, [selectedFaqIds, stats]);
-
   return (
     <GenerationContext.Provider
       value={{
@@ -155,19 +281,39 @@ export const GenerationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         setProductInfo,
         updateProductInfoField,
         faqs,
+        setFaqs,
         selectedFaqIds,
         toggleFaqSelection,
         selectAllFaqs,
         deselectAllFaqs,
-        autoBalanceFaqs,
         updateFaq,
         personaFilter,
         setPersonaFilter,
-        isGenerating,
-        startGenerating,
-        seoMetrics,
         stats,
+        projectId,
+        setProjectId,
+        generationId,
+        setGenerationId,
         resetWorkflow,
+        isSavingSelection,
+        isSuggestingFaqs,
+        selectionError,
+        suggestionError,
+        saveSelection,
+        suggestBestFaqs,
+        seoAnalysis,
+        setSeoAnalysis,
+        isAnalyzingSeo,
+        seoError,
+        analyzeSeo,
+        publicationPreview,
+        publication,
+        isLoadingPublication,
+        isPublishing,
+        publicationError,
+        loadPublicationPreview,
+        publishGeneration,
+        unpublishGeneration,
       }}
     >
       {children}

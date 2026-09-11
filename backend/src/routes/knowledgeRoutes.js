@@ -1,6 +1,7 @@
 const express = require('express');
 const {
   ingestWebsite,
+  ingestText,
   getKnowledgeSources,
   getKnowledgeSource,
   deleteKnowledgeSource,
@@ -14,6 +15,7 @@ const router = express.Router({ mergeParams: true });
 router.use(authMiddleware);
 
 router.post('/website', ingestWebsite);
+router.post('/text', ingestText);
 router.post('/search', searchKnowledgeEndpoint);
 router.post('/ask', askQuestionEndpoint);
 router.get('/', getKnowledgeSources);

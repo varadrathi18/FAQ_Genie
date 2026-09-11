@@ -1,6 +1,6 @@
 const { Worker, UnrecoverableError } = require('bullmq');
 const { connection } = require('../queues/queueConnection');
-const { processWebsiteSource } = require('../services/knowledgeService');
+const { processWebsiteSource, processTextSource } = require('../services/knowledgeService');
 
 const knowledgeWorker = new Worker('knowledgeQueue', async (job) => {
   const { sourceId, userId } = job.data;
@@ -12,7 +12,11 @@ const knowledgeWorker = new Worker('knowledgeQueue', async (job) => {
   await job.updateProgress(10);
   
   try {
-    await processWebsiteSource(sourceId);
+    if (job.name === 'knowledge.ingestText') {
+      await processTextSource(sourceId, job.data.text);
+    } else {
+      await processWebsiteSource(sourceId);
+    }
     await job.updateProgress(100);
     return { sourceId };
   } catch (error) {

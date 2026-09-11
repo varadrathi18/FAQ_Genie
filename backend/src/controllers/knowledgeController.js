@@ -90,6 +90,62 @@ const ingestWebsite = async (req, res, next) => {
   }
 };
 
+const ingestText = async (req, res, next) => {
+  try {
+    const { projectId } = req.params;
+    await verifyProjectAccess(projectId, req.userId);
+
+    const { title, text } = req.body;
+    if (!title || typeof title !== 'string' || title.trim() === '') {
+      return res.status(400).json({
+        error: { message: 'Title is required.', code: 'BAD_REQUEST' }
+      });
+    }
+    if (!text || typeof text !== 'string' || text.trim() === '') {
+      return res.status(400).json({
+        error: { message: 'Text content is required.', code: 'BAD_REQUEST' }
+      });
+    }
+
+    // Since text can be repeatedly updated, we will create a generic source or update the latest one for this project
+    let source = await KnowledgeSource.findOne({ projectId, userId: req.userId, type: 'text', title: title.trim() });
+
+    if (!source) {
+      source = await KnowledgeSource.create({
+        projectId,
+        userId: req.userId,
+        type: 'text',
+        title: title.trim(),
+        status: 'pending'
+      });
+    } else {
+      source.status = 'pending';
+      source.error = null;
+      await source.save();
+    }
+
+    const jobId = `knowledge-text-${source._id}-${Date.now()}`;
+    await knowledgeQueue.add('knowledge.ingestText', { sourceId: source._id, userId: req.userId, text: text.trim() }, {
+      jobId,
+      removeOnComplete: 100,
+      removeOnFail: 500,
+      attempts: 3,
+      backoff: { type: 'exponential', delay: 1000 }
+    });
+
+    res.status(202).json({
+      jobId,
+      status: 'queued',
+      sourceId: source._id
+    });
+  } catch (error) {
+    if (error.status) {
+      return res.status(error.status).json({ error: { message: error.message, code: error.code } });
+    }
+    next(error);
+  }
+};
+
 const getKnowledgeSources = async (req, res, next) => {
   try {
     const { projectId } = req.params;
@@ -231,6 +287,7 @@ const askQuestionEndpoint = async (req, res, next) => {
 
 module.exports = {
   ingestWebsite,
+  ingestText,
   getKnowledgeSources,
   getKnowledgeSource,
   deleteKnowledgeSource,

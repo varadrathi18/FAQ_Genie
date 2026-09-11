@@ -19,11 +19,14 @@ export const ReviewFaqsPage: React.FC = () => {
     toggleFaqSelection,
     selectAllFaqs,
     deselectAllFaqs,
-    autoBalanceFaqs,
     updateFaq,
     personaFilter,
     setPersonaFilter,
     stats,
+    isSavingSelection,
+    isSuggestingFaqs,
+    saveSelection,
+    suggestBestFaqs,
   } = useGeneration();
 
   const [editingFaq, setEditingFaq] = useState<FAQ | null>(null);
@@ -34,17 +37,26 @@ export const ReviewFaqsPage: React.FC = () => {
     return faq.persona === personaFilter;
   });
 
-  const handleSuggest = () => {
-    autoBalanceFaqs();
-    toast('Balanced FAQ set selected (2 Nora, 2 Sam, 2 Pro)', 'success');
+  const handleSuggest = async () => {
+    try {
+      await suggestBestFaqs();
+      toast('Best FAQs selected successfully!', 'success');
+    } catch (error: any) {
+      toast(error.message || 'Failed to suggest FAQs', 'error');
+    }
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (selectedFaqIds.length === 0) {
       toast('Please select at least 1 FAQ to analyze SEO', 'error');
       return;
     }
-    navigate('/app/generate/seo');
+    try {
+      await saveSelection();
+      navigate('/app/generate/seo');
+    } catch (error: any) {
+      toast(error.message || 'Failed to save selection', 'error');
+    }
   };
 
   return (
@@ -59,7 +71,7 @@ export const ReviewFaqsPage: React.FC = () => {
             Review &amp; Select FAQs
           </h1>
           <p className="text-xs sm:text-sm text-[#69707D] mt-1">
-            Generated 12 questions across three personas. Select the strongest set for your published collection.
+            Generated {stats.total} questions across three personas. Select the strongest set for your published collection.
           </p>
         </div>
 
@@ -67,12 +79,16 @@ export const ReviewFaqsPage: React.FC = () => {
           <Button
             variant="primary"
             onClick={handleContinue}
-            disabled={selectedFaqIds.length === 0}
+            disabled={selectedFaqIds.length === 0 || isSavingSelection}
             className="shadow-xs text-xs sm:text-sm"
           >
-            <span>Continue to SEO</span>
-            <span className="font-mono text-xs opacity-80">({selectedFaqIds.length})</span>
-            <ArrowRight className="w-4 h-4 ml-1" />
+            <span>{isSavingSelection ? 'Saving...' : 'Continue to SEO'}</span>
+            {!isSavingSelection && (
+              <>
+                <span className="font-mono text-xs opacity-80 ml-1">({selectedFaqIds.length})</span>
+                <ArrowRight className="w-4 h-4 ml-1" />
+              </>
+            )}
           </Button>
         </div>
       </div>
@@ -89,6 +105,7 @@ export const ReviewFaqsPage: React.FC = () => {
             pro: stats.proCount,
           }}
           onSuggestBest={handleSuggest}
+          isSuggesting={isSuggestingFaqs}
         />
       </div>
 
@@ -153,12 +170,16 @@ export const ReviewFaqsPage: React.FC = () => {
           variant="primary"
           size="md"
           onClick={handleContinue}
-          disabled={selectedFaqIds.length === 0}
+          disabled={selectedFaqIds.length === 0 || isSavingSelection}
           className="shadow-xs"
         >
-          <span>Continue to SEO Analysis</span>
-          <span className="font-mono text-xs opacity-90">({selectedFaqIds.length} Selected)</span>
-          <ArrowRight className="w-4 h-4 ml-1.5" />
+          <span>{isSavingSelection ? 'Saving...' : 'Continue to SEO Analysis'}</span>
+          {!isSavingSelection && (
+            <>
+              <span className="font-mono text-xs opacity-90 ml-1.5">({selectedFaqIds.length} Selected)</span>
+              <ArrowRight className="w-4 h-4 ml-1.5" />
+            </>
+          )}
         </Button>
       </div>
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { cn } from '../../lib/utils';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Loader2 } from 'lucide-react';
 
 interface PersonaTabsProps {
   activeTab: 'all' | 'nora' | 'sam' | 'pro';
@@ -13,6 +13,7 @@ interface PersonaTabsProps {
   };
   onSuggestBest?: () => void;
   showSuggestButton?: boolean;
+  isSuggesting?: boolean;
 }
 
 export const PersonaTabs: React.FC<PersonaTabsProps> = ({
@@ -21,6 +22,7 @@ export const PersonaTabs: React.FC<PersonaTabsProps> = ({
   counts,
   onSuggestBest,
   showSuggestButton = true,
+  isSuggesting = false,
 }) => {
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 select-none">
@@ -99,15 +101,24 @@ export const PersonaTabs: React.FC<PersonaTabsProps> = ({
         </button>
       </div>
 
-      {/* Suggest Best FAQs Button (matches Desktop Image 14 and Mobile Image 10) */}
       {showSuggestButton && onSuggestBest && (
         <button
           type="button"
           onClick={onSuggestBest}
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#635BFF] hover:text-[#5148E5] px-3 py-1.5 rounded bg-[#EEECFF]/60 hover:bg-[#EEECFF] transition-colors border border-[#635BFF]/20 self-start sm:self-auto cursor-pointer"
+          disabled={isSuggesting}
+          className={cn(
+            "inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded transition-colors border self-start sm:self-auto",
+            isSuggesting
+              ? "text-gray-400 bg-gray-50 border-gray-200 cursor-not-allowed"
+              : "text-[#635BFF] hover:text-[#5148E5] bg-[#EEECFF]/60 hover:bg-[#EEECFF] border-[#635BFF]/20 cursor-pointer"
+          )}
         >
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>Suggest Best FAQs</span>
+          {isSuggesting ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          ) : (
+            <Sparkles className="w-3.5 h-3.5" />
+          )}
+          <span>{isSuggesting ? 'Suggesting...' : 'Suggest Best FAQs'}</span>
         </button>
       )}
     </div>

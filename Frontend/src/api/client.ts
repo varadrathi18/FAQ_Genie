@@ -14,6 +14,7 @@ export class APIError extends Error {
 
 interface RequestOptions extends RequestInit {
   body?: any;
+  timeout?: number;
 }
 
 async function request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
@@ -29,14 +30,19 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
     options.body = JSON.stringify(options.body);
   }
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), options.timeout || 15000); // 15s default
+
   const fetchOptions: RequestInit = {
     ...options,
     headers,
     credentials: 'include',
+    signal: controller.signal,
   };
 
   try {
     const response = await fetch(url, fetchOptions);
+    clearTimeout(timeoutId);
 
     // If response is no content or empty
     const text = await response.text();
@@ -58,6 +64,14 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
 
     return data as T;
   } catch (error) {
+    if (typeof clearTimeout !== 'undefined' && timeoutId) {
+      clearTimeout(timeoutId);
+    }
+    
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      throw new APIError('Request timed out. The server took too long to respond.', 408, 'TIMEOUT');
+    }
+    
     if (error instanceof APIError || (error && (error as any).name === 'APIError')) {
       throw error;
     }
